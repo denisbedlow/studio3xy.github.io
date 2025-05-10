@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Blink to Change Video</title>
+  <title>DBN</title>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
@@ -16,16 +16,16 @@
   </style>
 </head>
 <body>
-  <video id="movie" width="640" height="360" autoplay muted></video>
-  <video id="inputVideo" width="640" height="360" hidden></video>
-  <canvas class="output_canvas" width="640" height="360"></canvas>
+  <video id="movie" width="1920" height="1080" autoplay muted></video>
+  <video id="inputVideo" width="1920" height="1080" hidden></video>
+  <canvas class="output_canvas" width="1920" height="1080"></canvas>
 
   <script>
     const movie = document.getElementById('movie');
     const videos = [
-      "videos/video1.mp4",
-      "videos/video2.mp4",
-      "videos/video3.mp4"
+      "videos/Courtyard_red.mp4",
+      "videos/Courtyard_green.mp4",
+      "videos/Courtyard_blue.mp4"
     ];
     let currentIndex = 0;
 
@@ -85,8 +85,8 @@
       onFrame: async () => {
         await faceMesh.send({ image: videoElement });
       },
-      width: 640,
-      height: 360
+      width: 1920,
+      height: 1080
     });
 
     camera.start();
