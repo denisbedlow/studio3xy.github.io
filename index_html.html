@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blink Counter</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>👁️ Blink Counter</h1>
+        
+        <div id="counter" class="counter-display blink-counter">0</div>
+        
+        <div id="status" class="status">Click "Start Detection" to begin</div>
+        
+        <div class="controls">
+            <button id="startBtn" onclick="startDetection()">Start Detection</button>
+            <button id="resetBtn" onclick="resetCounter()">Reset Counter</button>
+            <button id="stopBtn" onclick="stopDetection()" disabled>Stop Detection</button>
+        </div>
+        
+        <div class="camera-container">
+            <video id="video" autoplay muted playsinline></video>
+            <canvas id="canvas" style="display: none;"></canvas>
+        </div>
+        
+        <div id="error" class="error" style="display: none;"></div>
+        
+        <div class="info">
+            <p>This app detects your blinks and increments the counter. Make sure your face is visible to the camera and you're in good lighting.</p>
+            <p class="shortcuts">Keyboard shortcuts: <strong>Space</strong> - Test blink, <strong>R</strong> - Reset counter</p>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-item">
+                <span class="stat-label">Session Time:</span>
+                <span id="sessionTime">00:00</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Blinks/Min:</span>
+                <span id="blinksPerMin">0</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,239 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    padding: 20px;
+}
+
+.container {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    max-width: 600px;
+    width: 100%;
+}
+
+h1 {
+    font-size: 3rem;
+    margin-bottom: 30px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.counter-display {
+    font-size: 8rem;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    margin: 30px 0;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    min-width: 200px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.blink-counter {
+    transition: all 0.3s ease;
+}
+
+.blink-counter.blink-animation {
+    transform: scale(1.2);
+    color: #ffeb3b;
+    text-shadow: 0 0 30px rgba(255, 235, 59, 0.8);
+}
+
+.status {
+    font-size: 1.2rem;
+    margin: 20px 0;
+    opacity: 0.8;
+    min-height: 1.5rem;
+}
+
+.controls {
+    margin: 30px 0;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+button {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 12px 24px;
+    font-size: 1rem;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+button:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.camera-container {
+    margin: 20px 0;
+    position: relative;
+    display: flex;
+    justify-content: center;
+}
+
+#video {
+    border-radius: 10px;
+    max-width: 400px;
+    width: 100%;
+    height: auto;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    display: none;
+}
+
+#video.active {
+    display: block;
+}
+
+.info {
+    margin-top: 20px;
+    font-size: 0.9rem;
+    opacity: 0.7;
+    line-height: 1.5;
+}
+
+.shortcuts {
+    margin-top: 10px;
+    font-size: 0.8rem;
+    opacity: 0.6;
+}
+
+.error {
+    color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.1);
+    border: 1px solid rgba(255, 107, 107, 0.3);
+    padding: 15px;
+    border-radius: 10px;
+    margin: 20px 0;
+}
+
+.stats {
+    margin-top: 30px;
+    display: flex;
+    justify-content: space-around;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    opacity: 0.7;
+}
+
+.stat-item span:last-child {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+    margin-right: 10px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .container {
+        padding: 20px;
+        margin: 10px;
+    }
+    
+    h1 {
+        font-size: 2rem;
+    }
+    
+    .counter-display {
+        font-size: 5rem;
+        padding: 15px;
+    }
+    
+    .controls {
+        gap: 5px;
+    }
+    
+    button {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+    }
+    
+    #video {
+        max-width: 300px;
+    }
+    
+    .stats {
+        flex-direction: column;
+        gap: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 15px;
+    }
+    
+    h1 {
+        font-size: 1.5rem;
+    }
+    
+    .counter-display {
+        font-size: 4rem;
+    }
+    
+    button {
+        padding: 8px 16px;
+        font-size: 0.8rem;
+    }
+}
