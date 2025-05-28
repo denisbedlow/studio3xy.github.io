@@ -11,49 +11,17 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 </head>
 <body>
-    <div class="container">
-        <div class="back-link">
-            <a href="index.html">← Back to Features</a>
-        </div>
-        
-        <h1>👁️ Eye Tracking</h1>
+    <div class="fullscreen-container">
+        <img id="cityscape" src="https://images.unsplash.com/photo-1444723121867-7a241cacace9?w=1920&auto=format&fit=crop&q=80" alt="Cityscape">
+        <canvas id="overlay"></canvas>
         
         <div class="controls">
             <button id="startBtn" onclick="startTracking()">Start Tracking</button>
             <button id="stopBtn" onclick="stopTracking()" disabled>Stop Tracking</button>
-            <button id="clearBtn" onclick="clearHeatmap()">Clear Heatmap</button>
-        </div>
-        
-        <div class="tracking-container">
-            <div class="image-container">
-                <img id="cityscape" src="https://images.unsplash.com/photo-1444723121867-7a241cacace9?w=1200&auto=format&fit=crop&q=80" alt="Cityscape">
-                <canvas id="canvas"></canvas>
-            </div>
-            
-            <div class="heatmap-container">
-                <canvas id="heatmap"></canvas>
-            </div>
+            <button id="clearBtn" onclick="clearOverlay()">Clear Overlay</button>
         </div>
         
         <div id="status" class="status">Click "Start Tracking" to begin</div>
-        
-        <div id="error" class="error" style="display: none;"></div>
-        
-        <div class="stats">
-            <div class="stat-item">
-                <span class="stat-label">Session Time:</span>
-                <span id="sessionTime">00:00</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">Gaze Points:</span>
-                <span id="gazePoints">0</span>
-            </div>
-        </div>
-        
-        <div class="info">
-            <p>This tool tracks your eye movements and creates a heatmap of your gaze patterns. Make sure your face is visible to the camera and you're in good lighting.</p>
-            <p class="shortcuts">Keyboard shortcuts: <strong>Space</strong> - Pause/Resume tracking, <strong>C</strong> - Clear heatmap</p>
-        </div>
     </div>
 
     <script src="eye-tracking.js"></script>
