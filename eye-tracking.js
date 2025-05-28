@@ -42,8 +42,15 @@ async function initCamera() {
     });
 
     await camera.start();
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    
+    // Wait for video to be ready
+    await new Promise((resolve) => {
+        video.onloadedmetadata = () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            resolve();
+        };
+    });
 }
 
 // Initialize the heatmap
@@ -55,6 +62,10 @@ function initHeatmap() {
     const video = document.getElementById('video');
     heatmapCanvas.width = video.videoWidth;
     heatmapCanvas.height = video.videoHeight;
+    
+    // Clear the heatmap with a semi-transparent background
+    heatmapCtx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+    heatmapCtx.fillRect(0, 0, heatmapCanvas.width, heatmapCanvas.height);
 }
 
 // Process face mesh results
@@ -100,7 +111,7 @@ function onResults(results) {
 
 // Update heatmap with new gaze point
 function updateHeatmap(point) {
-    const radius = 50;
+    const radius = 30; // Reduced radius for more precise heatmap
     const gradient = heatmapCtx.createRadialGradient(
         point.x * heatmapCanvas.width,
         point.y * heatmapCanvas.height,
@@ -110,7 +121,9 @@ function updateHeatmap(point) {
         radius
     );
     
-    gradient.addColorStop(0, 'rgba(255, 0, 0, 0.2)');
+    // More intense colors for better visibility
+    gradient.addColorStop(0, 'rgba(255, 0, 0, 0.4)');
+    gradient.addColorStop(0.5, 'rgba(255, 0, 0, 0.2)');
     gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
     
     heatmapCtx.fillStyle = gradient;
@@ -160,6 +173,9 @@ function stopTracking() {
 // Clear heatmap
 function clearHeatmap() {
     heatmapCtx.clearRect(0, 0, heatmapCanvas.width, heatmapCanvas.height);
+    // Reset background
+    heatmapCtx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+    heatmapCtx.fillRect(0, 0, heatmapCanvas.width, heatmapCanvas.height);
     gazePoints = [];
     document.getElementById('gazePoints').textContent = '0';
 }
