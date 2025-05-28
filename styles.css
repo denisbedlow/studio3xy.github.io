@@ -250,16 +250,16 @@ video {
     margin: 0 auto;
 }
 
-.video-container, .heatmap-container {
+.image-container, .heatmap-container {
     position: relative;
     width: 100%;
     background: #000;
     border-radius: 8px;
     overflow: hidden;
-    aspect-ratio: 4/3;
+    aspect-ratio: 16/9;
 }
 
-.video-container video {
+.image-container img {
     position: absolute;
     top: 0;
     left: 0;
@@ -268,7 +268,7 @@ video {
     object-fit: cover;
 }
 
-.video-container canvas {
+.image-container canvas {
     position: absolute;
     top: 0;
     left: 0;
@@ -286,9 +286,5 @@ video {
 @media (max-width: 768px) {
     .tracking-container {
         grid-template-columns: 1fr;
-    }
-    
-    .video-container, .heatmap-container {
-        aspect-ratio: 16/9;
     }
 }

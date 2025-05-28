@@ -6,6 +6,7 @@ let gazePoints = [];
 let heatmapCanvas;
 let heatmapCtx;
 let sessionTimer;
+let cityscapeImage;
 
 // Initialize the face mesh model
 async function initFaceMesh() {
@@ -27,7 +28,10 @@ async function initFaceMesh() {
 
 // Initialize the camera
 async function initCamera() {
-    const video = document.getElementById('video');
+    const video = document.createElement('video');
+    video.style.display = 'none';
+    document.body.appendChild(video);
+    
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
 
@@ -58,10 +62,10 @@ function initHeatmap() {
     heatmapCanvas = document.getElementById('heatmap');
     heatmapCtx = heatmapCanvas.getContext('2d');
     
-    // Set heatmap size to match video
-    const video = document.getElementById('video');
-    heatmapCanvas.width = video.videoWidth;
-    heatmapCanvas.height = video.videoHeight;
+    // Set heatmap size to match image
+    const image = document.getElementById('cityscape');
+    heatmapCanvas.width = image.naturalWidth;
+    heatmapCanvas.height = image.naturalHeight;
     
     // Clear the heatmap with a semi-transparent background
     heatmapCtx.fillStyle = 'rgba(0, 0, 0, 0.1)';
@@ -72,13 +76,13 @@ function initHeatmap() {
 function onResults(results) {
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
-    const video = document.getElementById('video');
+    const image = document.getElementById('cityscape');
 
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Draw video frame
-    ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+    // Draw cityscape image
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
 
     if (results.multiFaceLandmarks) {
         for (const landmarks of results.multiFaceLandmarks) {
