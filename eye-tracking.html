@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eye Tracking - Studio3xy</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div class="fullscreen-container">
+        <img id="cityscape" src="https://images.unsplash.com/photo-1444723121867-7a241cacace9?w=1920&auto=format&fit=crop&q=80" alt="Cityscape">
+        <canvas id="overlay"></canvas>
+        
+        <div class="controls">
+            <button id="startBtn" onclick="startTracking()">Start Tracking</button>
+            <button id="stopBtn" onclick="stopTracking()" disabled>Stop Tracking</button>
+            <button id="clearBtn" onclick="clearOverlay()">Clear Overlay</button>
+        </div>
+        
+        <div id="status" class="status">Click "Start Tracking" to begin</div>
+    </div>
+
+    <script src="eye-tracking.js"></script>
+</body>
+</html> 
