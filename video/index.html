@@ -1,15 +1,24 @@
 <!doctype html>
 <html  lang="en">
     <head>
-    <title>Hyper8</title>
+    <title>Selected videos</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="generator" content="Hyper 8 Video System 0.20.1 ()">
-    
+    <link href="feed.atom" rel="alternate" title="Atom" type="application/atom+xml">
+<link href="media.rss" rel="alternate" title="Media RSS" type="application/rss+xml">
+<link href="plain.rss" rel="alternate" title="Plain RSS" type="application/rss+xml">
+<link href="podcast.rss" rel="alternate" title="Podcast RSS" type="application/rss+xml">
+<meta property="og:description" content="Some videos I find iteresting"/>
+<meta property="og:locale" content="en"/>
+<meta property="og:site_name" content="Selected videos"/>
+<meta property="og:title" content="Selected videos"/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://studio3xy.com/video/"/>
     <link rel="stylesheet" href="site.css?r8DR25lhVgQ">
     <script defer src="adaptive_theme.js?Upwfx1-HrbI"></script>
-    <script defer src="clipboard.js?BY84gqnw8Qc"></script>
-    <script defer src="video.js?s-KURsuk2eY" type="module"></script>
+    
+    
 </head>
 
     <body>
@@ -34,221 +43,54 @@
         </header>
         <div class="growing">
             <div class="center">
-                <div class="player_wrapper" data-state="intro">
-    <div class="player_intro">
-        <svg class="versions_ring" width="380" height="380" version="1.1" viewBox="0 0 380 380" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-        <filter id="ring_shadow">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="8" />
-        </filter>
-        <filter id="text_shadow">
-            <feDropShadow dx="0" dy="3" flood-color="var(--d-2)" flood-opacity="0.4" stdDeviation="3"/>
-        </filter>
-    </defs>
-    <circle class="backdrop" cx="190" cy="194" filter="url(#ring_shadow)" r="91"/>
-    <g
-    data-label="432p"
-    data-src="Computer Home BUF.mp4"
-    tabindex="0">
-    <circle cx="190" cy="190" fill="transparent" r="74.1"/>
-<path d="M 174.42,167.24455 L 212.42,190 L 174.42,212.75545 Z"/>
+                <div style="margin-top: 4rem;"></div><h1>Selected videos </h1>
 
-    <path d="M 190,95
-         A 95 95 0 1 1 189.99834,95
-         L 189.9987,115.9
-         A 74.1 74.1 0 1 0 190,115.9
-         Z"/>
-
-    <rect class="backdrop" filter="url(#text_shadow)" rx="5"/>
-    <text text-anchor="middle" x="190.00133" y="342">
-        432p
-    </text>
-    <text class="size" text-anchor="middle" x="190.00133" y="364.8">
-        40 MB
-    </text>
-    <title>432p 40 MB</title>
-</g>
-
+<div class="description reading_width"><p>Some videos I find iteresting</p></div><div class="actions flex">
+    <a href="subscribe/">
+        <svg  width="1em" height="1em" version="1.1" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+    <title>Feed</title>
+    <path d="m41.597 22.351c-8.6734-8.6734-20.213-13.45-32.496-13.45v9.0364c9.8677 0 19.139 3.8367 26.106 10.803 6.9666 6.9667 10.803 16.238 10.803 26.106h9.0364c-1.5e-4 -12.281-4.7769-23.823-13.45-32.496z"/>
+    <path d="m9.0076 24.192v9.0364c11.92 0 21.618 9.6975 21.618 21.618h9.0364c0-16.902-13.751-30.654-30.654-30.654z"/>
+    <circle cx="15.423" cy="48.625" r="6.4721"/>
 </svg>
-
-        
-    </div>
-    <div class="player_outro">
-        <button class="align flex space" id="replay">
-            <svg width="1em" height="1em" version="1.1" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-    <title>Play</title>
-    <path d="m11.116 59.677 45.476-26.453-45.544-28.093z"/>
-</svg>
-
-            Replay
-        </button>
-        
-    </div>
-    <div class="player_controls">
-        <div class="timeline">
-            <div class="bar backdrop"></div>
-            <div class="bar progress"></div>
-            <input aria-valuenow="0" aria-valuetext="00:00" max="365.06412" min="0" step="any" type="range" value="0">
-            <div class="bar outline"></div>
-        </div>
-        <div class="control_pane">
-            <div class="left_playback_controls">
-                <button id="toggle_playback"><svg width="1em" height="1em" version="1.1" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-    <title>Play</title>
-    <path d="m11.116 59.677 45.476-26.453-45.544-28.093z"/>
-</svg>
-</button>
-                <button class="toggle_volume"><svg width="1em" height="1em" version="1.1" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-    <title>Loud Volume</title>
-    <path d="m32.955 4.6484-18.182 15.877h-7.8887-3.1797c-1.4206 0-2.5645 1.1439-2.5645 2.5645v3.1758 11.953 3.1758c0 1.4206 1.1439 2.5645 2.5645 2.5645h3.1797 7.8887l18.182 15.875v-55.186zm10.223 8.127a2.4605 2.4605 0 0 0-2.4609 2.459 2.4605 2.4605 0 0 0 2.4609 2.4609c8.1842 0 14.76 6.5605 14.76 14.709 1e-6 8.1485-6.5754 14.709-14.76 14.709a2.4605 2.4605 0 0 0-2.4609 2.459 2.4605 2.4605 0 0 0 2.4609 2.4609c10.836 0 19.682-8.813 19.682-19.629 0-10.816-8.8455-19.629-19.682-19.629zm-2 9.2793a2.4605 2.4605 0 0 0-2.4609 2.4609 2.4605 2.4605 0 0 0 2.4609 2.4609c3.0438 0 5.4512 2.4046 5.4512 5.4277 0 3.0232-2.4074 5.4277-5.4512 5.4277a2.4605 2.4605 0 0 0-2.4609 2.4609 2.4605 2.4605 0 0 0 2.4609 2.4609c5.6955 0 10.373-4.6587 10.373-10.35s-4.6776-10.35-10.373-10.35z"/>
-</svg>
-</button>
-                <button id="speed"><span class="multiplier">1.0</span><span class="x">x</span></button>
-                <div>
-                    <span id="time_current">00:00</span> / <span id="time_total">06:05</span>
-                </div>
-            </div>
-            <div class="right_playback_controls">
-                <div class="selector_control version" style="position: relative;">
-    <button id="cycle_versions" tabindex="-1">432p</button>
-    <div class="selector_options centered">
-        <button data-label="432p" data-src="Computer Home BUF.mp4">
-    <span class="active_marker_container"><svg width="1em" height="1em" version="1.1" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-    <title>Active</title>
-    <path d="m18.494 10.136c-3.5869 1e-6 -6.4945 2.9095-6.4945 6.4964v30.736c0 3.5869 2.9076 6.4964 6.4945 6.4964 3.5869 0 6.4945-2.9095 6.4945-6.4964v-30.736c0-3.5869-2.9076-6.4964-6.4945-6.4964z"/>
-</svg>
-</span> <strong>432p</strong>&nbsp;&nbsp;<small>40 MB</small>
-</button>
-
-    </div>
+ Subscribe
+    </a>
+</div>
+<div class="videos_grid">
+    <a href="hyper8/">
+    <div class="thumbnail_wrapper">
+    <img  class="thumbnail" src="hyper8/poster_480x269.jpg" srcset="hyper8/poster_160x90.jpg 160w,hyper8/poster_320x180.jpg 320w,hyper8/poster_480x269.jpg 480w">
+    <span class="duration">6 min</span>
 </div>
 
-                
-                <button class="toggle_fullscreen"><svg width="1em" height="1em" version="1.1" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-    <title>Maximize</title>
-    <path d="m4.2695 59.731h17.506v-7.0907h-10.415v-10.415h-7.0907zm55.462 0v-17.506h-7.0907v10.415h-10.415v7.0907zm0-55.462h-17.506v7.0907h10.415v10.415h7.0907zm-55.462 0v17.506h7.0907v-10.415h10.415v-7.0907z"/>
-</svg>
-</button>
-            </div>
-        </div>
-    </div>
-    <video data-duration="365.06412" playsinline poster="poster_540x303.jpg" preload="none" src="Computer Home BUF.mp4">
-        
-    </video>
+    <div class="caption">BUF</div>
+    <span class="release_date">14 June 2025</span>
+</a>
+
+<a href="ai-vs-ai-two-chatbots-talking-to-each-other/">
+    <div class="thumbnail_wrapper">
+    <img  class="thumbnail" src="ai-vs-ai-two-chatbots-talking-to-each-other/poster_480x270.jpg" srcset="ai-vs-ai-two-chatbots-talking-to-each-other/poster_160x90.jpg 160w,ai-vs-ai-two-chatbots-talking-to-each-other/poster_320x180.jpg 320w,ai-vs-ai-two-chatbots-talking-to-each-other/poster_480x270.jpg 480w">
+    <span class="duration">1 min</span>
 </div>
 
-<div class="video_info">
-    <div class="align apart flex" style="margin-top: 2rem;">
-        <div>
-            <h1 class="video_title">Hyper8 </h1>
-            
-        </div>
-        <div class="actions align flex space">
-            
-        <button data-dynamic-url="" data-copy>
-            <span class="icon"><svg aria-hidden="true" width="1em" height="1em" version="1.1" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-    <path d="m24.18 7.1387c-3.8714 0-7.0703 3.197-7.0703 7.0684h5.1992c0-1.0814 0.78966-1.8711 1.8711-1.8711h25.439c1.0814 0 1.8711 0.78966 1.8711 1.8711v25.441c0 1.0814-0.78966 1.8691-1.8711 1.8691v5.1992c3.8714 0 7.0684-3.197 7.0684-7.0684v-25.441c0-3.8714-3.197-7.0684-7.0684-7.0684h-25.439zm-9.9434 10.131c-3.8714 0-7.0684 3.1989-7.0684 7.0703v25.439c0 3.8714 3.197 7.0684 7.0684 7.0684h25.441c3.8714 0 7.0684-3.197 7.0684-7.0684v-25.439c0-3.8714-3.197-7.0703-7.0684-7.0703h-25.441zm0 5.1992h25.441c1.0814 0 1.8711 0.78966 1.8711 1.8711v25.439c0 1.0814-0.78966 1.8711-1.8711 1.8711h-25.441c-1.0814 0-1.8711-0.78966-1.8711-1.8711v-25.439c0-1.0814 0.78966-1.8711 1.8711-1.8711z"/>
-</svg>
-</span>
-            <span>Copy Link</label>
-        </button>
-    
-            
-            
-        </div>
-    </div>
-    
-    
+    <div class="caption">Chat bot war</div>
+    <span class="release_date">15 June 2025</span>
+</a>
+
 </div>
 
             </div>
         </div>
         <footer>
             <span>
-                Hyper8
+                Selected videos
             </span>
             <a class="system_info" href="https://simonrepp.com/hyper8" target="_blank">
                 Hyper 8 Video System 0.20
             </a>
         </footer>
     </div>
-    <template id="copy_icon">
-    <svg aria-hidden="true" width="1em" height="1em" version="1.1" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-    <path d="m24.18 7.1387c-3.8714 0-7.0703 3.197-7.0703 7.0684h5.1992c0-1.0814 0.78966-1.8711 1.8711-1.8711h25.439c1.0814 0 1.8711 0.78966 1.8711 1.8711v25.441c0 1.0814-0.78966 1.8691-1.8711 1.8691v5.1992c3.8714 0 7.0684-3.197 7.0684-7.0684v-25.441c0-3.8714-3.197-7.0684-7.0684-7.0684h-25.439zm-9.9434 10.131c-3.8714 0-7.0684 3.1989-7.0684 7.0703v25.439c0 3.8714 3.197 7.0684 7.0684 7.0684h25.441c3.8714 0 7.0684-3.197 7.0684-7.0684v-25.439c0-3.8714-3.197-7.0703-7.0684-7.0703h-25.441zm0 5.1992h25.441c1.0814 0 1.8711 0.78966 1.8711 1.8711v25.439c0 1.0814-0.78966 1.8711-1.8711 1.8711h-25.441c-1.0814 0-1.8711-0.78966-1.8711-1.8711v-25.439c0-1.0814 0.78966-1.8711 1.8711-1.8711z"/>
-</svg>
-
-</template>
-<template id="failure_icon">
-    <svg width="1em" height="1em" version="1.1" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-    <title>Failed</title>
-    <path d="m16.25 9.1797-7.0703 7.0703 15.75 15.75-15.75 15.75 7.0703 7.0703 15.75-15.75 15.75 15.75 7.0703-7.0703-15.75-15.75 15.75-15.75-7.0703-7.0703-15.75 15.75z"/>
-</svg>
-
-</template>
-<template id="success_icon">
-    <svg width="1em" height="1em" version="1.1" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-    <title>Copied</title>
-    <path d="m53.857 9.1797-31.5 31.5-12.215-12.215-7.0703 7.0703 19.285 19.285 38.57-38.57z"/>
-</svg>
-
-</template>
-<template id="maximize_icon">
-    <svg width="1em" height="1em" version="1.1" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-    <title>Maximize</title>
-    <path d="m4.2695 59.731h17.506v-7.0907h-10.415v-10.415h-7.0907zm55.462 0v-17.506h-7.0907v10.415h-10.415v7.0907zm0-55.462h-17.506v7.0907h10.415v10.415h7.0907zm-55.462 0v17.506h7.0907v-10.415h10.415v-7.0907z"/>
-</svg>
-
-</template>
-<template id="minimize_icon">
-    <svg width="1em" height="1em" version="1.1" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-    <title>Minimize</title>
-    <path d="m36.27 27.731h17.506v-7.0907h-10.415v-10.415h-7.0907zm-8.5385 0v-17.506h-7.0907v10.415h-10.415v7.0907zm0 8.5385h-17.506v7.0907h10.415v10.415h7.0907zm8.5385 0v17.506h7.0907v-10.415h10.415v-7.0907z"/>
-</svg>
-
-</template>
-<template id="pause_icon">
-    <svg width="1em" height="1em" version="1.1" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-    <title>Pause</title>
-    <path d="m36.915 56.995v-49.985h15.592v49.985zm-25.421 0v-49.985h15.592v49.985z"/>
-</svg>
-
-</template>
-<template id="play_icon">
-    <svg width="1em" height="1em" version="1.1" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-    <title>Play</title>
-    <path d="m11.116 59.677 45.476-26.453-45.544-28.093z"/>
-</svg>
-
-</template>
-<template id="subtitles_icon">
-    <svg  width="1em" height="1em" version="1.1" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-    <title>Subtitles</title>
-    <path d="m35.699 18.158q2.0133-3.322 5.587-4.379 1.963-0.55367 4.4294-0.55367 7.1977 0 12.835 1.661v5.5367t-0.40267-0.05033q-0.35234-0.05033-1.0067-0.10067-0.604-0.05033-1.4597-0.10067-0.85567-0.10067-1.9127-0.151-1.0067-0.10067-2.0133-0.151-2.3657-0.151-4.228-0.151t-2.9194 0.25167q-1.0067 0.20133-1.963 0.90601-0.95634 0.65434-1.4093 2.0133-1.0067 2.9194-1.0067 9.3117 0 6.3924 1.4597 9.2614 1.51 2.8187 5.6877 2.8187 4.7314 0 9.5634-0.302l1.6107-0.10067v5.4864q-4.53 1.4093-11.677 1.4093-0.55367 0-1.1577 0-6.7447-0.05033-9.6641-4.832-2.869-4.7817-2.869-14.194 0-9.4627 2.5167-13.59zm-27.734 0q2.0133-3.322 5.587-4.379 1.963-0.55367 4.4294-0.55367 7.1977 0 12.835 1.661v5.5367t-0.40267-0.05033q-0.35234-0.05033-1.0067-0.10067-0.604-0.05033-1.4597-0.10067-0.85567-0.10067-1.9127-0.151-1.0067-0.10067-2.0133-0.151-2.3657-0.151-4.228-0.151t-2.9194 0.25167q-1.0067 0.20133-1.963 0.90601-0.95634 0.65434-1.4093 2.0133-1.0067 2.9194-1.0067 9.3117 0 6.3924 1.4597 9.2614 1.51 2.8187 5.6877 2.8187 4.7314 0 9.5634-0.302l1.6107-0.10067v5.4864q-4.53 1.4093-11.677 1.4093-0.55367 0-1.1577 0-6.7447-0.05033-9.6641-4.832-2.869-4.7817-2.869-14.194 0-9.4627 2.5167-13.59z"/>
-</svg>
-
-</template>
-<template id="volume_loud_icon">
-    <svg width="1em" height="1em" version="1.1" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-    <title>Loud Volume</title>
-    <path d="m32.955 4.6484-18.182 15.877h-7.8887-3.1797c-1.4206 0-2.5645 1.1439-2.5645 2.5645v3.1758 11.953 3.1758c0 1.4206 1.1439 2.5645 2.5645 2.5645h3.1797 7.8887l18.182 15.875v-55.186zm10.223 8.127a2.4605 2.4605 0 0 0-2.4609 2.459 2.4605 2.4605 0 0 0 2.4609 2.4609c8.1842 0 14.76 6.5605 14.76 14.709 1e-6 8.1485-6.5754 14.709-14.76 14.709a2.4605 2.4605 0 0 0-2.4609 2.459 2.4605 2.4605 0 0 0 2.4609 2.4609c10.836 0 19.682-8.813 19.682-19.629 0-10.816-8.8455-19.629-19.682-19.629zm-2 9.2793a2.4605 2.4605 0 0 0-2.4609 2.4609 2.4605 2.4605 0 0 0 2.4609 2.4609c3.0438 0 5.4512 2.4046 5.4512 5.4277 0 3.0232-2.4074 5.4277-5.4512 5.4277a2.4605 2.4605 0 0 0-2.4609 2.4609 2.4605 2.4605 0 0 0 2.4609 2.4609c5.6955 0 10.373-4.6587 10.373-10.35s-4.6776-10.35-10.373-10.35z"/>
-</svg>
-
-</template>
-<template id="volume_medium_icon">
-    <svg width="1em" height="1em" version="1.1" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-    <title>Medium Volume</title>
-    <path d="m32.955 4.6484-18.182 15.877h-11.068c-1.4206 0-2.5645 1.1439-2.5645 2.5645v18.305c0 1.4206 1.1439 2.5645 2.5645 2.5645h11.068l18.182 15.875zm8.2227 17.406c-1.3592-2.41e-4 -2.4612 1.1017-2.4609 2.4609-2.41e-4 1.3592 1.1017 2.4612 2.4609 2.4609 3.0438 0 5.4512 2.4046 5.4512 5.4277 0 3.0232-2.4074 5.4277-5.4512 5.4277-1.3592-2.41e-4 -2.4612 1.1017-2.4609 2.4609-2.41e-4 1.3592 1.1017 2.4612 2.4609 2.4609 5.6955 0 10.373-4.6587 10.373-10.35s-4.6776-10.35-10.373-10.35z"/>
-</svg>
-
-</template>
-<template id="volume_muted_icon">
-    <svg width="1em" height="1em" version="1.1" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-    <title>Sound muted</title>
-    <path d="m32.955 4.6484-18.182 15.877h-7.8887-3.1797c-1.4206 0-2.5645 1.1439-2.5645 2.5645v3.1758 11.953 3.1758c0 1.4206 1.1439 2.5645 2.5645 2.5645h3.1797 7.8887l18.182 15.875v-55.186zm11.053 17.814c-0.6527-8.7e-5 -1.2787 0.25917-1.7402 0.7207-0.96144 0.96098-0.96144 2.5195 0 3.4805l5.9844 5.9844-5.9844 5.9844c-0.9601 0.96075-0.9601 2.5178 0 3.4785 0.96098 0.96144 2.5195 0.96144 3.4805 0l5.9824-5.9824 5.9844 5.9824c0.96098 0.96144 2.5195 0.96144 3.4805 0 0.9601-0.96075 0.9601-2.5178 0-3.4785l-5.9844-5.9844 5.9844-5.9844c0.96144-0.96098 0.96144-2.5195 0-3.4805-0.46152-0.46154-1.0875-0.72079-1.7402-0.7207-0.6527-8.7e-5 -1.2787 0.25917-1.7402 0.7207l-5.9844 5.9844-5.9824-5.9844c-0.46152-0.46154-1.0875-0.72079-1.7402-0.7207z"/>
-</svg>
-
-</template>
-
+    
 </body>
 
 </html>

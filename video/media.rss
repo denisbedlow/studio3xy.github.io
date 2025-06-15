@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/">
+    <channel>
+        <atom:link href="https://studio3xy.com/video/media.rss" rel="self" type="application/rss+xml"/>
+        <description>&lt;p&gt;Some videos I find iteresting&lt;/p&gt;</description>
+        <generator>Hyper 8 Video System 0.20.1 ()</generator>
+        <language>en</language>
+        <lastBuildDate>Sun, 15 Jun 2025 16:52:31 +0000</lastBuildDate>
+        <link>https://studio3xy.com/video/</link>
+        <title>Selected videos</title>
+        
+        <item>
+    
+    <guid>https://studio3xy.com/video/ai-vs-ai-two-chatbots-talking-to-each-other/</guid>
+    <link>https://studio3xy.com/video/ai-vs-ai-two-chatbots-talking-to-each-other/</link>
+    <title>Chat bot war</title>
+    <media:group>
+    <media:content
+    duration="83.94014"
+    fileSize="4642108"
+    framerate="NaN"
+    height="1080"
+    
+    medium="video"
+    type="video/mp4"
+    url="https://studio3xy.com/video/ai-vs-ai-two-chatbots-talking-to-each-other/AI vs. AI. Two chatbots talking to each other.mp4"
+    width="1920"/>
+
+</media:group>
+
+<media:thumbnail height="720" url="https://studio3xy.com/video/ai-vs-ai-two-chatbots-talking-to-each-other/poster_1280x720.jpg" width="1280"/>
+</item>
+
+<item>
+    
+    <guid>https://studio3xy.com/video/hyper8/</guid>
+    <link>https://studio3xy.com/video/hyper8/</link>
+    <title>BUF</title>
+    <media:group>
+    <media:content
+    duration="365.06412"
+    fileSize="40222414"
+    framerate="25"
+    height="432"
+    isDefault="true"
+    medium="video"
+    type="video/mp4"
+    url="https://studio3xy.com/video/hyper8/Computer Home BUF.mp4"
+    width="540"/>
+
+</media:group>
+
+<media:thumbnail height="303" url="https://studio3xy.com/video/hyper8/poster_540x303.jpg" width="540"/>
+</item>
+
+    </channel>
+</rss>
