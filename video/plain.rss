@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" >
+    <channel>
+        <atom:link href="https://studio3xy.com/video/plain.rss" rel="self" type="application/rss+xml"/>
+        <description>&lt;p&gt;Single shots&lt;/p&gt;</description>
+        <generator>Hyper 8 Video System 0.20.1 ()</generator>
+        <language>en</language>
+        <lastBuildDate>Wed, 18 Jun 2025 21:29:21 +0000</lastBuildDate>
+        <link>https://studio3xy.com/video/</link>
+        <title>Dairy</title>
+        
+        <item>
+    <description>&lt;p&gt;Young people playing basketball.&lt;/p&gt;</description>
+    <guid>https://studio3xy.com/video/2025-06-18-basketball-training/</guid>
+    <link>https://studio3xy.com/video/2025-06-18-basketball-training/</link>
+    <title>Basketball training</title>
+    
+</item>
+
+    </channel>
+</rss>

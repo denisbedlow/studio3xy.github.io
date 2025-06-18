@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <author>
+        <name>Dairy</name>
+    </author>
+    <generator uri="https://simonrepp.com/hyper8" version="0.20.1">
+        Hyper 8 Video System 0.20.1 ()
+    </generator>
+    <id>https://studio3xy.com/video/</id>
+    <link href="https://studio3xy.com/video/feed.atom" rel="self"/>
+    <subtitle type="html">&lt;p&gt;Single shots&lt;/p&gt;</subtitle>
+    <title>Dairy</title>
+    <updated>2025-06-18T21:29:21.109864+00:00</updated>
+    <entry>
+    <id>https://studio3xy.com/video/2025-06-18-basketball-training/</id>
+    <link href="https://studio3xy.com/video/2025-06-18-basketball-training/" rel="alternate"/>
+    <title>Basketball training</title>
+    <summary type="html">&lt;p&gt;Young people playing basketball.&lt;/p&gt;</summary>
+    <updated>2025-06-18T21:29:21.109864+00:00</updated>
+</entry>
+
+</feed>
