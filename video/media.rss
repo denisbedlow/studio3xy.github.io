@@ -2,18 +2,18 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/">
     <channel>
         <atom:link href="https://studio3xy.com/video/media.rss" rel="self" type="application/rss+xml"/>
-        <description>&lt;p&gt;Single shots&lt;/p&gt;</description>
+        <description>&lt;p&gt;Single shots of this and that...&lt;/p&gt;</description>
         <generator>Hyper 8 Video System 0.20.1 ()</generator>
         <language>en</language>
-        <lastBuildDate>Wed, 18 Jun 2025 21:29:21 +0000</lastBuildDate>
+        <lastBuildDate>Thu, 19 Jun 2025 15:32:17 +0000</lastBuildDate>
         <link>https://studio3xy.com/video/</link>
-        <title>Dairy</title>
+        <title>Dailies</title>
         
         <item>
     <description>&lt;p&gt;Young people playing basketball.&lt;/p&gt;</description>
     <guid>https://studio3xy.com/video/2025-06-18-basketball-training/</guid>
     <link>https://studio3xy.com/video/2025-06-18-basketball-training/</link>
-    <title>Basketball training</title>
+    <title>All eyes on me</title>
     <media:group>
     <media:content
     duration="129.57867"
@@ -29,6 +29,28 @@
 </media:group>
 
 <media:thumbnail height="720" url="https://studio3xy.com/video/2025-06-18-basketball-training/poster_1280x720.jpg" width="1280"/>
+</item>
+
+<item>
+    <description>&lt;p&gt;Supervised earth bath&lt;/p&gt;</description>
+    <guid>https://studio3xy.com/video/chicks-on-the-grass/</guid>
+    <link>https://studio3xy.com/video/chicks-on-the-grass/</link>
+    <title>Chicks on the grass</title>
+    <media:group>
+    <media:content
+    duration="77.90933"
+    fileSize="52184735"
+    framerate="48"
+    height="2160"
+    isDefault="true"
+    medium="video"
+    type="video/mp4"
+    url="https://studio3xy.com/video/chicks-on-the-grass/Chicks on the grass.mp4"
+    width="3840"/>
+
+</media:group>
+
+<media:thumbnail height="720" url="https://studio3xy.com/video/chicks-on-the-grass/poster_1280x720.jpg" width="1280"/>
 </item>
 
     </channel>

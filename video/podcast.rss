@@ -2,21 +2,31 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:podcast="https://podcastindex.org/namespace/1.0">
     <channel>
         <atom:link href="https://studio3xy.com/video/podcast.rss" rel="self" type="application/rss+xml"/>
-        <description>&lt;p&gt;Single shots&lt;/p&gt;</description>
+        <description>&lt;p&gt;Single shots of this and that...&lt;/p&gt;</description>
         <generator>Hyper 8 Video System 0.20.1 ()</generator>
         <language>en</language>
-        <lastBuildDate>Wed, 18 Jun 2025 21:29:21 +0000</lastBuildDate>
+        <lastBuildDate>Thu, 19 Jun 2025 15:32:17 +0000</lastBuildDate>
         <link>https://studio3xy.com/video/</link>
-        <title>Dairy</title>
+        <title>Dailies</title>
         <podcast:guid>db80f4bd-42c1-5353-bf08-b4a8506fea48</podcast:guid>
         <item>
     <description>&lt;p&gt;Young people playing basketball.&lt;/p&gt;</description>
     <guid>https://studio3xy.com/video/2025-06-18-basketball-training/</guid>
     <link>https://studio3xy.com/video/2025-06-18-basketball-training/</link>
-    <title>Basketball training</title>
+    <title>All eyes on me</title>
     <enclosure length="86841802" type="video/mp4" url="https://studio3xy.com/video/2025-06-18-basketball-training/2025-06-18 basketball training.mp4"/>
 <itunes:duration>129.57867</itunes:duration>
 <itunes:image href="https://studio3xy.com/video/2025-06-18-basketball-training/poster_1280x720.jpg"/>
+</item>
+
+<item>
+    <description>&lt;p&gt;Supervised earth bath&lt;/p&gt;</description>
+    <guid>https://studio3xy.com/video/chicks-on-the-grass/</guid>
+    <link>https://studio3xy.com/video/chicks-on-the-grass/</link>
+    <title>Chicks on the grass</title>
+    <enclosure length="52184735" type="video/mp4" url="https://studio3xy.com/video/chicks-on-the-grass/Chicks on the grass.mp4"/>
+<itunes:duration>77.90933</itunes:duration>
+<itunes:image href="https://studio3xy.com/video/chicks-on-the-grass/poster_1280x720.jpg"/>
 </item>
 
     </channel>
