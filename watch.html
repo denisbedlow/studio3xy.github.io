@@ -50,11 +50,7 @@
             margin-bottom: 1.75rem;
         }
 
-        .consent-btns {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-        }
+        .consent-btns { display: flex; gap: 1rem; justify-content: center; }
 
         .consent-btns button {
             padding: 0.65rem 1.4rem;
@@ -64,42 +60,111 @@
             cursor: pointer;
         }
 
-        #allowBtn  { background: #3498db; color: #fff; }
-        #skipBtn   { background: #333;    color: #ccc; }
+        #allowBtn { background: #3498db; color: #fff; }
+        #skipBtn  { background: #333;    color: #ccc; }
 
-        /* ── Video player ── */
+        /* ── Player: flex column so controls sit BELOW the video ── */
         #player-wrap {
             position: fixed;
             inset: 0;
+            display: none;          /* shown as flex by showPlayer() */
+            flex-direction: column;
         }
 
-        video {
-            width: 100vw;
-            height: calc(100vh - 54px); /* leave 54px for the native controls bar */
+        /* Video area fills all remaining space */
+        #video-area {
+            flex: 1;
+            min-height: 0;          /* allow flex child to shrink */
+            position: relative;
+            background: #000;
+        }
+
+        #video-area video {
+            width: 100%;
+            height: 100%;
             display: block;
-            object-fit: contain;        /* preserve aspect ratio, black bars on sides */
+            object-fit: contain;    /* aspect ratio preserved, black bars on sides */
         }
 
-        /* Gaze overlay must match the video element exactly */
+        /* Gaze canvas covers exactly the video area */
         #gazeCanvas {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: calc(100vh - 54px);
+            inset: 0;
             pointer-events: none;
         }
 
-        /* ── Status bar ── */
+        /* ── Custom controls bar ── */
+        #controls {
+            flex-shrink: 0;
+            height: 52px;
+            background: #111;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 14px;
+            user-select: none;
+        }
+
+        #controls button {
+            background: none;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            opacity: 0.85;
+            flex-shrink: 0;
+        }
+
+        #controls button:hover { opacity: 1; }
+
+        /* Progress track */
+        #progressTrack {
+            flex: 1;
+            height: 4px;
+            background: rgba(255,255,255,0.25);
+            border-radius: 2px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        #progressTrack:hover { height: 6px; }
+
+        #progressFill {
+            height: 100%;
+            width: 0%;
+            background: #3498db;
+            border-radius: 2px;
+            pointer-events: none;
+        }
+
+        /* Time display */
+        .time {
+            font-size: 0.78rem;
+            color: rgba(255,255,255,0.7);
+            white-space: nowrap;
+            flex-shrink: 0;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Volume slider */
+        #volumeSlider {
+            width: 70px;
+            accent-color: #3498db;
+            flex-shrink: 0;
+        }
+
+        /* Tracking status */
         #statusBar {
-            position: fixed;
-            bottom: 8px;
+            position: absolute;
+            top: 8px;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 0.75rem;
-            color: rgba(255,255,255,0.4);
+            font-size: 0.72rem;
+            color: rgba(255,255,255,0.35);
             pointer-events: none;
-            z-index: 10;
+            white-space: nowrap;
         }
 
         /* ── Error / loading ── */
@@ -133,62 +198,95 @@
     </div>
 
     <!-- Video player -->
-    <div id="player-wrap" style="display:none">
-        <video id="video" controls playsinline></video>
-        <canvas id="gazeCanvas"></canvas>
+    <div id="player-wrap">
+
+        <!-- Video area (fills all space above controls) -->
+        <div id="video-area">
+            <video id="video" playsinline></video>   <!-- no controls attribute -->
+            <canvas id="gazeCanvas"></canvas>
+            <div id="statusBar"></div>
+        </div>
+
+        <!-- Custom controls bar (below, never overlapping) -->
+        <div id="controls">
+
+            <!-- Play / Pause -->
+            <button id="playBtn" onclick="togglePlay()" title="Play / Pause">
+                <svg id="iconPlay"  viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                <svg id="iconPause" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" style="display:none"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+            </button>
+
+            <!-- Current time -->
+            <span class="time" id="currentTime">0:00</span>
+
+            <!-- Progress bar -->
+            <div id="progressTrack" onmousedown="startSeek(event)" ontouchstart="startSeek(event)">
+                <div id="progressFill"></div>
+            </div>
+
+            <!-- Duration -->
+            <span class="time" id="durationTime">0:00</span>
+
+            <!-- Mute / Volume -->
+            <button id="muteBtn" onclick="toggleMute()" title="Mute">
+                <svg id="iconVol"  viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                <svg id="iconMute" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" style="display:none"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+            </button>
+
+            <input type="range" id="volumeSlider" min="0" max="1" step="0.02" value="1" oninput="setVolume(this.value)">
+
+            <!-- Fullscreen -->
+            <button onclick="toggleFullscreen()" title="Fullscreen">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+            </button>
+
+        </div>
     </div>
 
-    <div id="statusBar"></div>
     <div id="message">Loading video…</div>
 
-    <!-- MediaPipe (loaded on demand, after consent) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="supabase-config.js"></script>
     <script>
         // ── State ────────────────────────────────────────────────────────────────
 
-        const videoEl     = document.getElementById('video');
-        const gazeCanvas  = document.getElementById('gazeCanvas');
-        const gazeCtx     = gazeCanvas.getContext('2d');
-        const playerWrap  = document.getElementById('player-wrap');
-        const messageEl   = document.getElementById('message');
-        const statusEl    = document.getElementById('statusBar');
+        const videoEl    = document.getElementById('video');
+        const gazeCanvas = document.getElementById('gazeCanvas');
+        const gazeCtx    = gazeCanvas.getContext('2d');
+        const playerWrap = document.getElementById('player-wrap');
+        const messageEl  = document.getElementById('message');
+        const statusEl   = document.getElementById('statusBar');
 
-        let videoId       = null;
-        let sessionId     = null;
-        let tracking      = false;
+        let videoId    = null;
+        let sessionId  = null;
+        let tracking   = false;
+        let isSeeking  = false;
 
         // Tracking state
-        let gazeHistory   = [];
-        let smoothedGaze  = null;
-        let eyeClosedFrames = 0;
-        let lastBlinkTime = 0;
-        let lastGazeSampleTime = -1;    // video.currentTime of last sample
+        let gazeHistory      = [];
+        let smoothedGaze     = null;
+        let eyeClosedFrames  = 0;
+        let lastBlinkTime    = 0;
+        let lastGazeSampleTime = -1;
 
-        // Buffers flushed every FLUSH_INTERVAL ms
-        const FLUSH_INTERVAL  = 10000;
-        const GAZE_SAMPLE_MS  = 500;    // sample every 500ms of video time
+        const FLUSH_INTERVAL = 10000;
+        const GAZE_SAMPLE_MS = 500;
 
-        let gazeBuf  = [];
-        let blinkBuf = [];
+        let gazeBuf    = [];
+        let blinkBuf   = [];
         let flushTimer = null;
 
-        // FaceMesh / camera
         let faceMesh    = null;
         let trackerCam  = null;
         let cameraVideo = null;
 
-        // ── Init ─────────────────────────────────────────────────────────────────
+        // ── Init: load video from Supabase ────────────────────────────────────────
 
         (async () => {
-            const params  = new URLSearchParams(location.search);
-            videoId       = params.get('v');
+            const params = new URLSearchParams(location.search);
+            videoId = params.get('v');
 
-            if (!videoId) {
-                showMessage('No video specified.');
-                hideConsent();
-                return;
-            }
+            if (!videoId) { showMessage('No video specified.'); hideConsent(); return; }
 
             const { data, error } = await supabase
                 .from('videos')
@@ -196,48 +294,30 @@
                 .eq('id', videoId)
                 .single();
 
-            if (error || !data) {
-                showMessage('Video not found.');
-                hideConsent();
-                return;
-            }
+            if (error || !data)      { showMessage('Video not found.');                hideConsent(); return; }
+            if (!data.is_public)     { showMessage('This video is not publicly available.'); hideConsent(); return; }
 
-            if (!data.is_public) {
-                showMessage('This video is not publicly available.');
-                hideConsent();
-                return;
-            }
-
-            const { data: urlData } = supabase.storage
-                .from('videos')
-                .getPublicUrl(data.storage_path);
-
+            const { data: urlData } = supabase.storage.from('videos').getPublicUrl(data.storage_path);
             videoEl.src = urlData.publicUrl;
             document.title = data.title + ' – Studio3xy';
             hideMessage();
         })();
 
-        // ── Consent handlers ─────────────────────────────────────────────────────
+        // ── Consent ───────────────────────────────────────────────────────────────
 
         async function startWithTracking() {
             hideConsent();
             showPlayer();
 
-            // Create session row
             const { data: row, error } = await supabase
                 .from('sessions')
                 .insert({ video_id: videoId, user_agent: navigator.userAgent })
                 .select('id')
                 .single();
 
-            if (error || !row) {
-                setStatus('Could not create tracking session. Watching without tracking.');
-                return;
-            }
-
+            if (error || !row) { setStatus('Watching without tracking.'); return; }
             sessionId = row.id;
 
-            // Load MediaPipe scripts then start tracking
             await loadMediaPipe();
             await initTracking();
         }
@@ -247,15 +327,97 @@
             showPlayer();
         }
 
+        // ── Custom controls ───────────────────────────────────────────────────────
+
+        function togglePlay() {
+            videoEl.paused ? videoEl.play() : videoEl.pause();
+        }
+
+        videoEl.addEventListener('play',  () => {
+            document.getElementById('iconPlay').style.display  = 'none';
+            document.getElementById('iconPause').style.display = '';
+        });
+        videoEl.addEventListener('pause', () => {
+            document.getElementById('iconPlay').style.display  = '';
+            document.getElementById('iconPause').style.display = 'none';
+        });
+        videoEl.addEventListener('ended', () => {
+            document.getElementById('iconPlay').style.display  = '';
+            document.getElementById('iconPause').style.display = 'none';
+            flushData();
+        });
+
+        videoEl.addEventListener('loadedmetadata', () => {
+            document.getElementById('durationTime').textContent = formatTime(videoEl.duration);
+        });
+
+        videoEl.addEventListener('timeupdate', () => {
+            if (isSeeking) return;
+            const pct = videoEl.duration ? (videoEl.currentTime / videoEl.duration) * 100 : 0;
+            document.getElementById('progressFill').style.width = pct + '%';
+            document.getElementById('currentTime').textContent  = formatTime(videoEl.currentTime);
+        });
+
+        // Seek by clicking / dragging the progress bar
+        function startSeek(e) {
+            isSeeking = true;
+            doSeek(e);
+            const move = e.touches ? 'touchmove' : 'mousemove';
+            const up   = e.touches ? 'touchend'  : 'mouseup';
+            const onMove = (ev) => doSeek(ev);
+            const onUp   = ()   => { isSeeking = false; document.removeEventListener(move, onMove); document.removeEventListener(up, onUp); };
+            document.addEventListener(move, onMove);
+            document.addEventListener(up,   onUp);
+        }
+
+        function doSeek(e) {
+            const track  = document.getElementById('progressTrack');
+            const rect   = track.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const pct    = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+            document.getElementById('progressFill').style.width = (pct * 100) + '%';
+            if (videoEl.duration) videoEl.currentTime = pct * videoEl.duration;
+        }
+
+        function toggleMute() {
+            videoEl.muted = !videoEl.muted;
+            document.getElementById('iconVol').style.display  = videoEl.muted ? 'none' : '';
+            document.getElementById('iconMute').style.display = videoEl.muted ? ''     : 'none';
+            document.getElementById('volumeSlider').value     = videoEl.muted ? 0 : videoEl.volume;
+        }
+
+        function setVolume(v) {
+            videoEl.volume = v;
+            videoEl.muted  = (v == 0);
+            document.getElementById('iconVol').style.display  = videoEl.muted ? 'none' : '';
+            document.getElementById('iconMute').style.display = videoEl.muted ? ''     : 'none';
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                playerWrap.requestFullscreen().catch(() => {});
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Click on video area = play / pause
+        document.getElementById('video-area').addEventListener('click', togglePlay);
+
+        function formatTime(s) {
+            if (isNaN(s)) return '0:00';
+            const m = Math.floor(s / 60);
+            const sec = Math.floor(s % 60).toString().padStart(2, '0');
+            return m + ':' + sec;
+        }
+
         // ── MediaPipe dynamic load ────────────────────────────────────────────────
 
         function loadScript(src) {
             return new Promise((resolve, reject) => {
                 const s = document.createElement('script');
-                s.src = src;
-                s.crossOrigin = 'anonymous';
-                s.onload  = resolve;
-                s.onerror = reject;
+                s.src = src; s.crossOrigin = 'anonymous';
+                s.onload = resolve; s.onerror = reject;
                 document.head.appendChild(s);
             });
         }
@@ -274,7 +436,6 @@
         async function initTracking() {
             try {
                 setStatus('Starting eye tracking…');
-
                 cameraVideo = document.createElement('video');
                 cameraVideo.style.display = 'none';
                 document.body.appendChild(cameraVideo);
@@ -286,13 +447,8 @@
                 tracking = true;
                 flushTimer = setInterval(flushData, FLUSH_INTERVAL);
 
-                // Flush on page hide or video end
-                document.addEventListener('visibilitychange', () => {
-                    if (document.hidden) flushData();
-                });
-                videoEl.addEventListener('ended', flushData);
+                document.addEventListener('visibilitychange', () => { if (document.hidden) flushData(); });
 
-                // Resize canvas to match video
                 const resizeCanvas = () => {
                     gazeCanvas.width  = gazeCanvas.offsetWidth;
                     gazeCanvas.height = gazeCanvas.offsetHeight;
@@ -301,7 +457,6 @@
                 resizeCanvas();
 
                 setStatus('Eye tracking active');
-
             } catch (err) {
                 setStatus('Could not start camera: ' + err.message);
             }
@@ -311,21 +466,17 @@
 
         function onResults(results) {
             gazeCtx.clearRect(0, 0, gazeCanvas.width, gazeCanvas.height);
-
-            if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) return;
+            if (!results.multiFaceLandmarks || !results.multiFaceLandmarks.length) return;
 
             const landmarks = results.multiFaceLandmarks[0];
 
-            // ── Gaze ──
             const raw = computeRawGaze(landmarks);
             if (raw) {
-                const state = applyFilters(raw, gazeHistory, smoothedGaze);
+                const state  = applyFilters(raw, gazeHistory, smoothedGaze);
                 gazeHistory  = state.gazeHistory;
                 smoothedGaze = state.smoothedGaze;
-
                 const screen = rawToScreen(smoothedGaze, null);
 
-                // Draw subtle gaze dot (optional visual feedback, small + semi-transparent)
                 const gx = screen.x * gazeCanvas.width;
                 const gy = screen.y * gazeCanvas.height;
                 gazeCtx.beginPath();
@@ -333,7 +484,6 @@
                 gazeCtx.fillStyle = 'rgba(255, 80, 80, 0.4)';
                 gazeCtx.fill();
 
-                // Sample gaze at 500ms video-time intervals
                 const vt = videoEl.currentTime;
                 if (!videoEl.paused && vt - lastGazeSampleTime >= GAZE_SAMPLE_MS / 1000) {
                     lastGazeSampleTime = vt;
@@ -341,17 +491,13 @@
                 }
             }
 
-            // ── Blink ──
             const blinkResult = detectBlink(landmarks, eyeClosedFrames);
             eyeClosedFrames = blinkResult.eyeClosedFrames;
-
             if (blinkResult.blinked) {
                 const now = Date.now();
                 if (now - lastBlinkTime > 500) {
                     lastBlinkTime = now;
-                    if (!videoEl.paused) {
-                        blinkBuf.push({ session_id: sessionId, t: videoEl.currentTime });
-                    }
+                    if (!videoEl.paused) blinkBuf.push({ session_id: sessionId, t: videoEl.currentTime });
                 }
             }
         }
@@ -360,9 +506,8 @@
 
         async function flushData() {
             if (!sessionId) return;
-            const gaze  = gazeBuf.splice(0);
+            const gaze   = gazeBuf.splice(0);
             const blinks = blinkBuf.splice(0);
-
             if (gaze.length)   await supabase.from('gaze_points').insert(gaze);
             if (blinks.length) await supabase.from('blinks').insert(blinks);
         }
@@ -370,8 +515,8 @@
         // ── UI helpers ────────────────────────────────────────────────────────────
 
         function hideConsent() { document.getElementById('consent').classList.add('hidden'); }
-        function showPlayer()  { playerWrap.style.display = 'block'; hideMessage(); }
-        function showMessage(t){ messageEl.textContent = t; messageEl.style.display = 'block'; }
+        function showPlayer()  { playerWrap.style.display = 'flex'; hideMessage(); }
+        function showMessage(t){ messageEl.textContent = t; messageEl.style.display = 'flex'; }
         function hideMessage() { messageEl.style.display = 'none'; }
         function setStatus(t)  { statusEl.textContent = t; }
     </script>
