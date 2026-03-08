@@ -40,7 +40,6 @@
             const email    = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const btn      = document.getElementById('loginBtn');
-            const status   = document.getElementById('status');
 
             if (!email || !password) {
                 showStatus('Please enter your email and password.', 'error');
@@ -50,13 +49,26 @@
             btn.disabled = true;
             showStatus('Signing in…', 'info');
 
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
+            try {
+                // 10-second timeout so it never hangs silently
+                const timeout = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Request timed out — check your network connection.')), 10000)
+                );
 
-            if (error) {
-                showStatus(error.message, 'error');
+                const { error } = await Promise.race([
+                    supabase.auth.signInWithPassword({ email, password }),
+                    timeout
+                ]);
+
+                if (error) {
+                    showStatus(error.message, 'error');
+                    btn.disabled = false;
+                } else {
+                    window.location.href = 'upload.html';
+                }
+            } catch (err) {
+                showStatus(err.message, 'error');
                 btn.disabled = false;
-            } else {
-                window.location.href = 'upload.html';
             }
         }
 
