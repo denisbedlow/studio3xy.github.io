@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard – Studio3xy Admin</title>
+    <link rel="stylesheet" href="admin.css">
+    <script src="https://cdn.jsdelivr.net/npm/heatmap.js@2.0.5/build/heatmap.min.js"></script>
+</head>
+<body>
+    <div class="page-wide">
+        <header>
+            <h1>Dashboard</h1>
+            <div class="nav-links">
+                <a href="upload.html">Upload</a>
+                <a href="#" id="logoutLink">Sign out</a>
+            </div>
+        </header>
+
+        <div style="display:grid;grid-template-columns:280px 1fr;gap:1.5rem;align-items:start">
+
+            <!-- Video list -->
+            <div class="card" style="padding:1rem">
+                <h2 style="padding:0 0.25rem 1rem">Your Videos</h2>
+                <ul class="video-list" id="videoList">
+                    <li class="empty-state" id="listEmpty">
+                        <span class="spinner"></span> Loading…
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Analytics panel -->
+            <div id="analyticsPanel">
+                <div class="card">
+                    <div class="empty-state" id="analyticsEmpty">
+                        <p>Select a video to view analytics</p>
+                    </div>
+
+                    <div id="analyticsContent" style="display:none">
+                        <h2 id="analyticsTitle" style="margin-bottom:0.5rem"></h2>
+                        <p id="analyticsMeta" style="font-size:0.85rem;color:#888;margin-bottom:1.5rem"></p>
+
+                        <div class="analytics-grid">
+                            <!-- Gaze heatmap -->
+                            <div>
+                                <h3 style="font-size:0.9rem;color:#555;margin-bottom:0.5rem">Gaze Heatmap</h3>
+                                <div class="heatmap-wrap" id="heatmapWrap">
+                                    <img id="videoPoster" alt="">
+                                    <div id="heatmapContainer" style="position:absolute;inset:0"></div>
+                                </div>
+                                <p style="font-size:0.75rem;color:#aaa;margin-top:0.4rem">
+                                    Aggregated over all viewing sessions
+                                </p>
+                            </div>
+
+                            <!-- Blink chart -->
+                            <div class="blink-chart-wrap">
+                                <h3>Blinks over time (10-second buckets)</h3>
+                                <canvas id="blinkChart"></canvas>
+                                <p style="font-size:0.75rem;color:#aaa;margin-top:0.4rem" id="blinkTotal"></p>
+                            </div>
+                        </div>
+
+                        <!-- Sessions table -->
+                        <div style="margin-top:1.5rem">
+                            <h3 style="font-size:0.9rem;color:#555;margin-bottom:0.75rem">Sessions</h3>
+                            <table id="sessionsTable" style="width:100%;border-collapse:collapse;font-size:0.85rem">
+                                <thead>
+                                    <tr style="border-bottom:2px solid #eee;text-align:left">
+                                        <th style="padding:0.5rem">Started</th>
+                                        <th style="padding:0.5rem">Gaze points</th>
+                                        <th style="padding:0.5rem">Blinks</th>
+                                        <th style="padding:0.5rem">User agent</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sessionsBody"></tbody>
+                            </table>
+                        </div>
+
+                        <!-- Share link -->
+                        <div style="margin-top:1.5rem;padding:1rem;background:#f7f9fc;border-radius:8px">
+                            <p style="font-size:0.85rem;color:#555;margin-bottom:0.4rem">Share link</p>
+                            <div id="dashShareUrl" class="share-url" onclick="copyDashLink()" title="Click to copy" style="cursor:pointer"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="../supabase-config.js"></script>
+    <script>
+        let currentUser = null;
+        let videos      = [];
+        let heatmapInstance = null;
+        let selectedVideoId = null;
+
+        // ── Auth guard ────────────────────────────────────────────────────────────
+
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (!session) {
+                window.location.href = 'login.html';
+            } else {
+                currentUser = session.user;
+                loadVideos();
+            }
+        });
+
+        document.getElementById('logoutLink').addEventListener('click', async (e) => {
+            e.preventDefault();
+            await supabase.auth.signOut();
+            window.location.href = 'login.html';
+        });
+
+        // ── Load video list ───────────────────────────────────────────────────────
+
+        async function loadVideos() {
+            const { data, error } = await supabase
+                .from('videos')
+                .select('id, title, uploaded_at, duration')
+                .eq('uploaded_by', currentUser.id)
+                .order('uploaded_at', { ascending: false });
+
+            const listEl  = document.getElementById('videoList');
+            const emptyEl = document.getElementById('listEmpty');
+
+            if (error || !data || data.length === 0) {
+                emptyEl.innerHTML = '';
+                emptyEl.textContent = data && data.length === 0
+                    ? 'No videos yet. Upload one!'
+                    : 'Error loading videos.';
+                return;
+            }
+
+            emptyEl.remove();
+            videos = data;
+
+            data.forEach(v => {
+                const li = document.createElement('li');
+                li.className = 'video-item';
+                li.dataset.id = v.id;
+
+                const meta = document.createElement('div');
+                meta.className = 'video-meta';
+
+                const title = document.createElement('div');
+                title.className = 'video-title';
+                title.textContent = v.title;
+
+                const date = document.createElement('div');
+                date.className = 'video-date';
+                date.textContent = new Date(v.uploaded_at).toLocaleDateString();
+
+                meta.appendChild(title);
+                meta.appendChild(date);
+                li.appendChild(meta);
+
+                li.addEventListener('click', () => selectVideo(v.id, v.title, v.duration));
+                listEl.appendChild(li);
+            });
+        }
+
+        // ── Select video → load analytics ────────────────────────────────────────
+
+        async function selectVideo(videoId, title, duration) {
+            selectedVideoId = videoId;
+
+            // Highlight selected
+            document.querySelectorAll('.video-item').forEach(el => el.classList.remove('active'));
+            document.querySelector(`.video-item[data-id="${videoId}"]`).classList.add('active');
+
+            // Show content panel
+            document.getElementById('analyticsEmpty').style.display   = 'none';
+            document.getElementById('analyticsContent').style.display = 'block';
+            document.getElementById('analyticsTitle').textContent = title;
+            document.getElementById('analyticsMeta').textContent  = 'Loading sessions…';
+
+            // Set poster (video first frame via storage URL)
+            const { data: vidRow } = await supabase
+                .from('videos')
+                .select('storage_path')
+                .eq('id', videoId)
+                .single();
+
+            if (vidRow) {
+                const { data: urlData } = supabase.storage
+                    .from('videos')
+                    .getPublicUrl(vidRow.storage_path);
+                document.getElementById('videoPoster').src = urlData.publicUrl;
+            }
+
+            // Share link
+            const shareUrl = `${location.origin}/watch.html?v=${videoId}`;
+            document.getElementById('dashShareUrl').textContent = shareUrl;
+
+            // Fetch sessions
+            const { data: sessions } = await supabase
+                .from('sessions')
+                .select('id, started_at, user_agent')
+                .eq('video_id', videoId)
+                .order('started_at', { ascending: false });
+
+            if (!sessions || sessions.length === 0) {
+                document.getElementById('analyticsMeta').textContent = 'No sessions yet.';
+                renderSessions([]);
+                renderHeatmap([]);
+                renderBlinkChart([], duration);
+                return;
+            }
+
+            document.getElementById('analyticsMeta').textContent =
+                `${sessions.length} session${sessions.length > 1 ? 's' : ''}`;
+
+            const sessionIds = sessions.map(s => s.id);
+
+            // Fetch gaze + blinks in parallel
+            const [gazeRes, blinkRes] = await Promise.all([
+                supabase.from('gaze_points').select('x, y, t, session_id').in('session_id', sessionIds),
+                supabase.from('blinks').select('t, session_id').in('session_id', sessionIds)
+            ]);
+
+            const gazePoints = gazeRes.data  || [];
+            const blinks     = blinkRes.data || [];
+
+            // Enrich sessions with counts
+            const enriched = sessions.map(s => ({
+                ...s,
+                gazeCount:  gazePoints.filter(g => g.session_id === s.id).length,
+                blinkCount: blinks.filter(b => b.session_id === s.id).length
+            }));
+
+            renderSessions(enriched);
+            renderHeatmap(gazePoints);
+            renderBlinkChart(blinks, duration);
+        }
+
+        // ── Heatmap ───────────────────────────────────────────────────────────────
+
+        function renderHeatmap(gazePoints) {
+            const container = document.getElementById('heatmapContainer');
+            container.innerHTML = '';
+
+            if (gazePoints.length === 0) return;
+
+            const w = container.offsetWidth  || 640;
+            const h = container.offsetHeight || 360;
+
+            const hm = h337.create({
+                container,
+                radius: Math.round(w * 0.06),
+                maxOpacity: 0.7,
+                minOpacity: 0,
+                blur: 0.85,
+            });
+
+            const points = gazePoints.map(p => ({
+                x: Math.round(p.x * w),
+                y: Math.round(p.y * h),
+                value: 1
+            }));
+
+            hm.setData({ max: 5, data: points });
+            heatmapInstance = hm;
+        }
+
+        // ── Blink chart ───────────────────────────────────────────────────────────
+
+        function renderBlinkChart(blinks, duration) {
+            const canvas  = document.getElementById('blinkChart');
+            const ctx     = canvas.getContext('2d');
+            const BUCKET  = 10;  // seconds
+
+            const maxT    = duration || (blinks.length ? Math.max(...blinks.map(b => b.t)) : 60);
+            const numBuckets = Math.ceil(maxT / BUCKET) || 1;
+
+            // Tally blinks per bucket
+            const counts = new Array(numBuckets).fill(0);
+            blinks.forEach(b => {
+                const i = Math.min(Math.floor(b.t / BUCKET), numBuckets - 1);
+                counts[i]++;
+            });
+
+            const maxCount = Math.max(...counts, 1);
+            const W = canvas.offsetWidth  || 400;
+            const H = 180;
+            canvas.width  = W;
+            canvas.height = H;
+
+            const pad   = { top: 10, right: 10, bottom: 30, left: 30 };
+            const chartW = W - pad.left - pad.right;
+            const chartH = H - pad.top  - pad.bottom;
+            const barW   = Math.max(2, chartW / numBuckets - 2);
+
+            ctx.clearRect(0, 0, W, H);
+
+            // Bars
+            ctx.fillStyle = '#3498db';
+            counts.forEach((c, i) => {
+                const x = pad.left + i * (chartW / numBuckets);
+                const bh = (c / maxCount) * chartH;
+                ctx.fillRect(x, pad.top + chartH - bh, barW, bh);
+            });
+
+            // X-axis labels (every ~30s)
+            ctx.fillStyle = '#888';
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'center';
+            const labelEvery = Math.max(1, Math.round(30 / BUCKET));
+            for (let i = 0; i < numBuckets; i += labelEvery) {
+                const x = pad.left + i * (chartW / numBuckets) + barW / 2;
+                ctx.fillText(i * BUCKET + 's', x, H - 8);
+            }
+
+            // Y-axis
+            ctx.fillStyle = '#888';
+            ctx.textAlign = 'right';
+            ctx.fillText(maxCount, pad.left - 4, pad.top + 10);
+            ctx.fillText('0', pad.left - 4, pad.top + chartH);
+
+            document.getElementById('blinkTotal').textContent =
+                `Total blinks across all sessions: ${blinks.length}`;
+        }
+
+        // ── Sessions table ────────────────────────────────────────────────────────
+
+        function renderSessions(sessions) {
+            const tbody = document.getElementById('sessionsBody');
+            tbody.innerHTML = '';
+
+            if (sessions.length === 0) {
+                const tr = document.createElement('tr');
+                const td = document.createElement('td');
+                td.colSpan = 4;
+                td.style.cssText = 'padding:1rem;color:#aaa;text-align:center';
+                td.textContent = 'No sessions recorded yet.';
+                tr.appendChild(td);
+                tbody.appendChild(tr);
+                return;
+            }
+
+            sessions.forEach(s => {
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = '1px solid #f0f0f0';
+
+                const started = new Date(s.started_at).toLocaleString();
+                const ua = (s.user_agent || '').substring(0, 60) + (s.user_agent && s.user_agent.length > 60 ? '…' : '');
+
+                [started, s.gazeCount, s.blinkCount, ua].forEach(val => {
+                    const td = document.createElement('td');
+                    td.style.padding = '0.5rem';
+                    td.textContent = val;
+                    tr.appendChild(td);
+                });
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ── Copy link ─────────────────────────────────────────────────────────────
+
+        function copyDashLink() {
+            const url = document.getElementById('dashShareUrl').textContent;
+            navigator.clipboard.writeText(url).then(() => {
+                const el = document.getElementById('dashShareUrl');
+                const orig = el.textContent;
+                el.textContent = 'Copied!';
+                setTimeout(() => { el.textContent = orig; }, 1500);
+            });
+        }
+    </script>
+</body>
+</html>

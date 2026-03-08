@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Video – Studio3xy Admin</title>
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <div class="page">
+        <header>
+            <h1>Studio3xy Admin</h1>
+            <div class="nav-links">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="#" id="logoutLink">Sign out</a>
+            </div>
+        </header>
+
+        <div class="card">
+            <h2>Upload Video</h2>
+
+            <div id="status" class="status"></div>
+
+            <div class="form-group">
+                <label for="title">Title</label>
+                <input type="text" id="title" placeholder="My research video">
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description (optional)</label>
+                <textarea id="description" placeholder="Brief description of the video…"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="fileInput">Video file</label>
+                <input type="file" id="fileInput" accept="video/*">
+            </div>
+
+            <div class="progress-wrap" id="progressWrap">
+                <progress id="progressBar" value="0" max="100"></progress>
+                <div class="progress-label" id="progressLabel">0%</div>
+            </div>
+
+            <button id="uploadBtn" class="btn btn-primary" onclick="uploadVideo()">Upload & Get Link</button>
+
+            <div class="share-box" id="shareBox">
+                <p>Share this link with your viewers:</p>
+                <div class="share-url" id="shareUrl" onclick="copyLink()" title="Click to copy"></div>
+                <p style="font-size:0.75rem;color:#888;margin-top:0.5rem">Click the link to copy it</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="../supabase-config.js"></script>
+    <script>
+        let currentUser = null;
+
+        // Auth guard
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (!session) {
+                window.location.href = 'login.html';
+            } else {
+                currentUser = session.user;
+            }
+        });
+
+        document.getElementById('logoutLink').addEventListener('click', async (e) => {
+            e.preventDefault();
+            await supabase.auth.signOut();
+            window.location.href = 'login.html';
+        });
+
+        async function uploadVideo() {
+            const title       = document.getElementById('title').value.trim();
+            const description = document.getElementById('description').value.trim();
+            const fileInput   = document.getElementById('fileInput');
+            const file        = fileInput.files[0];
+
+            if (!title)  return showStatus('Please enter a title.', 'error');
+            if (!file)   return showStatus('Please select a video file.', 'error');
+
+            const btn = document.getElementById('uploadBtn');
+            btn.disabled = true;
+            hideShareBox();
+            showStatus('Creating video record…', 'info');
+
+            // 1. Insert video doc to get a UUID
+            const { data: videoRow, error: insertErr } = await supabase
+                .from('videos')
+                .insert({ title, description, uploaded_by: currentUser.id })
+                .select('id')
+                .single();
+
+            if (insertErr) {
+                showStatus('Error creating video record: ' + insertErr.message, 'error');
+                btn.disabled = false;
+                return;
+            }
+
+            const videoId    = videoRow.id;
+            const storagePath = `${videoId}/file${getExt(file.name)}`;
+
+            // 2. Upload to Storage with progress
+            showStatus('Uploading video…', 'info');
+            showProgress();
+
+            const { error: uploadErr } = await supabase.storage
+                .from('videos')
+                .upload(storagePath, file, {
+                    onUploadProgress: (progress) => {
+                        const pct = Math.round((progress.loaded / progress.total) * 100);
+                        setProgress(pct);
+                    }
+                });
+
+            if (uploadErr) {
+                showStatus('Upload failed: ' + uploadErr.message, 'error');
+                btn.disabled = false;
+                hideProgress();
+                return;
+            }
+
+            // 3. Get video duration
+            const duration = await getVideoDuration(file);
+
+            // 4. Update video doc with storagePath + duration
+            await supabase
+                .from('videos')
+                .update({ storage_path: storagePath, duration })
+                .eq('id', videoId);
+
+            hideProgress();
+            showStatus('Upload complete!', 'success');
+
+            const shareLink = `${location.origin}/watch.html?v=${videoId}`;
+            showShareBox(shareLink);
+
+            btn.disabled = false;
+            document.getElementById('title').value = '';
+            document.getElementById('description').value = '';
+            fileInput.value = '';
+        }
+
+        function getExt(filename) {
+            const m = filename.match(/\.[^.]+$/);
+            return m ? m[0] : '';
+        }
+
+        function getVideoDuration(file) {
+            return new Promise((resolve) => {
+                const video = document.createElement('video');
+                video.preload = 'metadata';
+                const url = URL.createObjectURL(file);
+                video.onloadedmetadata = () => {
+                    resolve(video.duration || 0);
+                    URL.revokeObjectURL(url);
+                };
+                video.onerror = () => resolve(0);
+                video.src = url;
+            });
+        }
+
+        function showStatus(msg, type) {
+            const el = document.getElementById('status');
+            el.textContent = msg;
+            el.className = 'status ' + type;
+        }
+
+        function showProgress() {
+            document.getElementById('progressWrap').classList.add('visible');
+            setProgress(0);
+        }
+
+        function setProgress(pct) {
+            document.getElementById('progressBar').value  = pct;
+            document.getElementById('progressLabel').textContent = pct + '%';
+        }
+
+        function hideProgress() {
+            document.getElementById('progressWrap').classList.remove('visible');
+        }
+
+        function showShareBox(url) {
+            document.getElementById('shareUrl').textContent = url;
+            document.getElementById('shareBox').classList.add('visible');
+        }
+
+        function hideShareBox() {
+            document.getElementById('shareBox').classList.remove('visible');
+        }
+
+        function copyLink() {
+            const url = document.getElementById('shareUrl').textContent;
+            navigator.clipboard.writeText(url).then(() => {
+                const el = document.getElementById('shareUrl');
+                const orig = el.textContent;
+                el.textContent = 'Copied!';
+                setTimeout(() => { el.textContent = orig; }, 1500);
+            });
+        }
+    </script>
+</body>
+</html>

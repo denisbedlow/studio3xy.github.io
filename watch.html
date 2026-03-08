@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watch – Studio3xy</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #000;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            color: #fff;
+        }
+
+        /* ── Consent banner ── */
+        #consent {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+
+        #consent.hidden { display: none; }
+
+        .consent-card {
+            background: #1a1a2e;
+            border: 1px solid #444;
+            border-radius: 16px;
+            padding: 2.5rem;
+            max-width: 420px;
+            text-align: center;
+        }
+
+        .consent-card h2 { font-size: 1.4rem; margin-bottom: 0.75rem; }
+
+        .consent-card p {
+            font-size: 0.9rem;
+            color: #bbb;
+            line-height: 1.6;
+            margin-bottom: 1.75rem;
+        }
+
+        .consent-btns {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .consent-btns button {
+            padding: 0.65rem 1.4rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+
+        #allowBtn  { background: #3498db; color: #fff; }
+        #skipBtn   { background: #333;    color: #ccc; }
+
+        /* ── Video player ── */
+        #player-wrap {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        video {
+            width: 100%;
+            display: block;
+            border-radius: 8px;
+        }
+
+        /* Gaze overlay */
+        #gazeCanvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            border-radius: 8px;
+        }
+
+        /* ── Status bar ── */
+        #statusBar {
+            margin-top: 0.75rem;
+            font-size: 0.8rem;
+            color: #888;
+            text-align: center;
+        }
+
+        /* ── Error / loading ── */
+        #message {
+            font-size: 1rem;
+            color: #aaa;
+            text-align: center;
+            padding: 2rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Consent banner -->
+    <div id="consent">
+        <div class="consent-card">
+            <h2>Enable Eye Tracking</h2>
+            <p>
+                This video uses your webcam to record where you look while watching.
+                Gaze data is stored anonymously and only visible to the video creator.
+                You can watch without tracking if you prefer.
+            </p>
+            <div class="consent-btns">
+                <button id="allowBtn" onclick="startWithTracking()">Allow &amp; Watch</button>
+                <button id="skipBtn"  onclick="startWithoutTracking()">Watch without tracking</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Video player -->
+    <div id="player-wrap" style="display:none">
+        <video id="video" controls playsinline></video>
+        <canvas id="gazeCanvas"></canvas>
+    </div>
+
+    <div id="statusBar"></div>
+    <div id="message">Loading video…</div>
+
+    <!-- MediaPipe (loaded on demand, after consent) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="supabase-config.js"></script>
+    <script>
+        // ── State ────────────────────────────────────────────────────────────────
+
+        const videoEl     = document.getElementById('video');
+        const gazeCanvas  = document.getElementById('gazeCanvas');
+        const gazeCtx     = gazeCanvas.getContext('2d');
+        const playerWrap  = document.getElementById('player-wrap');
+        const messageEl   = document.getElementById('message');
+        const statusEl    = document.getElementById('statusBar');
+
+        let videoId       = null;
+        let sessionId     = null;
+        let tracking      = false;
+
+        // Tracking state
+        let gazeHistory   = [];
+        let smoothedGaze  = null;
+        let eyeClosedFrames = 0;
+        let lastBlinkTime = 0;
+        let lastGazeSampleTime = -1;    // video.currentTime of last sample
+
+        // Buffers flushed every FLUSH_INTERVAL ms
+        const FLUSH_INTERVAL  = 10000;
+        const GAZE_SAMPLE_MS  = 500;    // sample every 500ms of video time
+
+        let gazeBuf  = [];
+        let blinkBuf = [];
+        let flushTimer = null;
+
+        // FaceMesh / camera
+        let faceMesh    = null;
+        let trackerCam  = null;
+        let cameraVideo = null;
+
+        // ── Init ─────────────────────────────────────────────────────────────────
+
+        (async () => {
+            const params  = new URLSearchParams(location.search);
+            videoId       = params.get('v');
+
+            if (!videoId) {
+                showMessage('No video specified.');
+                hideConsent();
+                return;
+            }
+
+            const { data, error } = await supabase
+                .from('videos')
+                .select('title, storage_path, is_public')
+                .eq('id', videoId)
+                .single();
+
+            if (error || !data) {
+                showMessage('Video not found.');
+                hideConsent();
+                return;
+            }
+
+            if (!data.is_public) {
+                showMessage('This video is not publicly available.');
+                hideConsent();
+                return;
+            }
+
+            const { data: urlData } = supabase.storage
+                .from('videos')
+                .getPublicUrl(data.storage_path);
+
+            videoEl.src = urlData.publicUrl;
+            document.title = data.title + ' – Studio3xy';
+            hideMessage();
+        })();
+
+        // ── Consent handlers ─────────────────────────────────────────────────────
+
+        async function startWithTracking() {
+            hideConsent();
+            showPlayer();
+
+            // Create session row
+            const { data: row, error } = await supabase
+                .from('sessions')
+                .insert({ video_id: videoId, user_agent: navigator.userAgent })
+                .select('id')
+                .single();
+
+            if (error || !row) {
+                setStatus('Could not create tracking session. Watching without tracking.');
+                return;
+            }
+
+            sessionId = row.id;
+
+            // Load MediaPipe scripts then start tracking
+            await loadMediaPipe();
+            await initTracking();
+        }
+
+        function startWithoutTracking() {
+            hideConsent();
+            showPlayer();
+        }
+
+        // ── MediaPipe dynamic load ────────────────────────────────────────────────
+
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = src;
+                s.crossOrigin = 'anonymous';
+                s.onload  = resolve;
+                s.onerror = reject;
+                document.head.appendChild(s);
+            });
+        }
+
+        async function loadMediaPipe() {
+            const cdn = 'https://cdn.jsdelivr.net/npm/@mediapipe';
+            await loadScript(`${cdn}/camera_utils/camera_utils.js`);
+            await loadScript(`${cdn}/control_utils/control_utils.js`);
+            await loadScript(`${cdn}/drawing_utils/drawing_utils.js`);
+            await loadScript(`${cdn}/face_mesh/face_mesh.js`);
+            await loadScript('eyetracking/tracker-core.js');
+        }
+
+        // ── Tracking init ─────────────────────────────────────────────────────────
+
+        async function initTracking() {
+            try {
+                setStatus('Starting eye tracking…');
+
+                cameraVideo = document.createElement('video');
+                cameraVideo.style.display = 'none';
+                document.body.appendChild(cameraVideo);
+
+                faceMesh   = createFaceMesh(onResults);
+                trackerCam = createCamera(cameraVideo, faceMesh, () => tracking);
+                await trackerCam.start();
+
+                tracking = true;
+                flushTimer = setInterval(flushData, FLUSH_INTERVAL);
+
+                // Flush on page hide or video end
+                document.addEventListener('visibilitychange', () => {
+                    if (document.hidden) flushData();
+                });
+                videoEl.addEventListener('ended', flushData);
+
+                // Resize canvas to match video
+                const resizeCanvas = () => {
+                    gazeCanvas.width  = gazeCanvas.offsetWidth;
+                    gazeCanvas.height = gazeCanvas.offsetHeight;
+                };
+                new ResizeObserver(resizeCanvas).observe(gazeCanvas);
+                resizeCanvas();
+
+                setStatus('Eye tracking active');
+
+            } catch (err) {
+                setStatus('Could not start camera: ' + err.message);
+            }
+        }
+
+        // ── FaceMesh results ──────────────────────────────────────────────────────
+
+        function onResults(results) {
+            gazeCtx.clearRect(0, 0, gazeCanvas.width, gazeCanvas.height);
+
+            if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) return;
+
+            const landmarks = results.multiFaceLandmarks[0];
+
+            // ── Gaze ──
+            const raw = computeRawGaze(landmarks);
+            if (raw) {
+                const state = applyFilters(raw, gazeHistory, smoothedGaze);
+                gazeHistory  = state.gazeHistory;
+                smoothedGaze = state.smoothedGaze;
+
+                const screen = rawToScreen(smoothedGaze, null);
+
+                // Draw subtle gaze dot (optional visual feedback, small + semi-transparent)
+                const gx = screen.x * gazeCanvas.width;
+                const gy = screen.y * gazeCanvas.height;
+                gazeCtx.beginPath();
+                gazeCtx.arc(gx, gy, 8, 0, Math.PI * 2);
+                gazeCtx.fillStyle = 'rgba(255, 80, 80, 0.4)';
+                gazeCtx.fill();
+
+                // Sample gaze at 500ms video-time intervals
+                const vt = videoEl.currentTime;
+                if (!videoEl.paused && vt - lastGazeSampleTime >= GAZE_SAMPLE_MS / 1000) {
+                    lastGazeSampleTime = vt;
+                    gazeBuf.push({ session_id: sessionId, t: vt, x: screen.x, y: screen.y });
+                }
+            }
+
+            // ── Blink ──
+            const blinkResult = detectBlink(landmarks, eyeClosedFrames);
+            eyeClosedFrames = blinkResult.eyeClosedFrames;
+
+            if (blinkResult.blinked) {
+                const now = Date.now();
+                if (now - lastBlinkTime > 500) {
+                    lastBlinkTime = now;
+                    if (!videoEl.paused) {
+                        blinkBuf.push({ session_id: sessionId, t: videoEl.currentTime });
+                    }
+                }
+            }
+        }
+
+        // ── Data flush ────────────────────────────────────────────────────────────
+
+        async function flushData() {
+            if (!sessionId) return;
+            const gaze  = gazeBuf.splice(0);
+            const blinks = blinkBuf.splice(0);
+
+            if (gaze.length)   await supabase.from('gaze_points').insert(gaze);
+            if (blinks.length) await supabase.from('blinks').insert(blinks);
+        }
+
+        // ── UI helpers ────────────────────────────────────────────────────────────
+
+        function hideConsent() { document.getElementById('consent').classList.add('hidden'); }
+        function showPlayer()  { playerWrap.style.display = 'block'; hideMessage(); }
+        function showMessage(t){ messageEl.textContent = t; messageEl.style.display = 'block'; }
+        function hideMessage() { messageEl.style.display = 'none'; }
+        function setStatus(t)  { statusEl.textContent = t; }
+    </script>
+</body>
+</html>
