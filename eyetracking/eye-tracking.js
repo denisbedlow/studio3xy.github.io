@@ -1,8 +1,10 @@
 let faceMesh;
 let camera;
+let cameraVideo;
 let isTracking = false;
 let overlayCanvas;
 let overlayCtx;
+let resizeHandler;
 
 // Initialize the face mesh model
 async function initFaceMesh() {
@@ -24,14 +26,14 @@ async function initFaceMesh() {
 
 // Initialize the camera
 async function initCamera() {
-    const video = document.createElement('video');
-    video.style.display = 'none';
-    document.body.appendChild(video);
+    cameraVideo = document.createElement('video');
+    cameraVideo.style.display = 'none';
+    document.body.appendChild(cameraVideo);
 
-    camera = new Camera(video, {
+    camera = new Camera(cameraVideo, {
         onFrame: async () => {
             if (isTracking) {
-                await faceMesh.send({image: video});
+                await faceMesh.send({image: cameraVideo});
             }
         },
         width: 640,
@@ -45,18 +47,18 @@ async function initCamera() {
 function initOverlay() {
     overlayCanvas = document.getElementById('overlay');
     overlayCtx = overlayCanvas.getContext('2d');
-    
+
     // Set canvas size to match window size
-    function resizeCanvas() {
+    resizeHandler = () => {
         overlayCanvas.width = window.innerWidth;
         overlayCanvas.height = window.innerHeight;
-    }
-    
+    };
+
     // Initial resize
-    resizeCanvas();
-    
+    resizeHandler();
+
     // Handle window resize
-    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('resize', resizeHandler);
 }
 
 // Process face mesh results
@@ -127,6 +129,26 @@ async function startTracking() {
 // Stop tracking
 function stopTracking() {
     isTracking = false;
+
+    if (camera) {
+        camera.stop();
+        camera = null;
+    }
+
+    if (cameraVideo) {
+        cameraVideo.remove();
+        cameraVideo = null;
+    }
+
+    if (resizeHandler) {
+        window.removeEventListener('resize', resizeHandler);
+        resizeHandler = null;
+    }
+
+    if (overlayCtx) {
+        overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+    }
+
     document.getElementById('startBtn').disabled = false;
     document.getElementById('stopBtn').disabled = true;
     document.getElementById('status').textContent = 'Tracking stopped';
@@ -134,7 +156,9 @@ function stopTracking() {
 
 // Clear overlay
 function clearOverlay() {
-    overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+    if (overlayCtx) {
+        overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+    }
 }
 
 // Keyboard shortcuts
