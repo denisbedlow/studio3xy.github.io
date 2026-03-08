@@ -61,18 +61,20 @@ function initOverlay() {
 
 // Process face mesh results
 function onResults(results) {
+    overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
     if (results.multiFaceLandmarks) {
         for (const landmarks of results.multiFaceLandmarks) {
-            // Calculate gaze point
-            const leftEye = landmarks[33];  // Left eye center
-            const rightEye = landmarks[263]; // Right eye center
-            
-            if (leftEye && rightEye) {
+            // Use iris center landmarks (available with refineLandmarks: true)
+            // 468 = left iris center, 473 = right iris center
+            const leftIris = landmarks[468];
+            const rightIris = landmarks[473];
+
+            if (leftIris && rightIris) {
                 const gazePoint = {
-                    x: (leftEye.x + rightEye.x) / 2,
-                    y: (leftEye.y + rightEye.y) / 2
+                    x: (leftIris.x + rightIris.x) / 2,
+                    y: (leftIris.y + rightIris.y) / 2
                 };
-                
+
                 // Draw cross at gaze point
                 drawCross(gazePoint);
             }
