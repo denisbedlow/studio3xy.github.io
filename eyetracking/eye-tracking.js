@@ -5,6 +5,14 @@ let isTracking = false;
 let overlayCanvas;
 let overlayCtx;
 let resizeHandler;
+let smoothedGaze = null;
+
+// Lower = smoother but more lag, higher = more responsive but jittery
+const SMOOTHING = 0.15;
+
+// Iris typically sits in this range within the eye when looking at screen edges
+const GAZE_MIN = 0.2;
+const GAZE_MAX = 0.8;
 
 // Initialize the face mesh model
 async function initFaceMesh() {
@@ -61,27 +69,60 @@ function initOverlay() {
     window.addEventListener('resize', resizeHandler);
 }
 
+// Estimate where on screen the user is looking by computing iris
+// offset within the eye socket, then mapping that to screen coordinates.
+function estimateGaze(landmarks) {
+    const leftIris  = landmarks[468]; // left iris center
+    const rightIris = landmarks[473]; // right iris center
+    if (!leftIris || !rightIris) return null;
+
+    // Left eye corners (33=lateral, 133=medial, 159=top, 145=bottom)
+    const leftMinX  = Math.min(landmarks[33].x,  landmarks[133].x);
+    const leftMaxX  = Math.max(landmarks[33].x,  landmarks[133].x);
+    const leftMinY  = Math.min(landmarks[159].y, landmarks[145].y);
+    const leftMaxY  = Math.max(landmarks[159].y, landmarks[145].y);
+
+    // Right eye corners (263=lateral, 362=medial, 386=top, 374=bottom)
+    const rightMinX = Math.min(landmarks[263].x, landmarks[362].x);
+    const rightMaxX = Math.max(landmarks[263].x, landmarks[362].x);
+    const rightMinY = Math.min(landmarks[386].y, landmarks[374].y);
+    const rightMaxY = Math.max(landmarks[386].y, landmarks[374].y);
+
+    // Iris ratio within each eye (0 = at left edge, 1 = at right edge)
+    const leftGazeX  = (leftIris.x  - leftMinX)  / (leftMaxX  - leftMinX);
+    const leftGazeY  = (leftIris.y  - leftMinY)  / (leftMaxY  - leftMinY);
+    const rightGazeX = (rightIris.x - rightMinX) / (rightMaxX - rightMinX);
+    const rightGazeY = (rightIris.y - rightMinY) / (rightMaxY - rightMinY);
+
+    const rawX = (leftGazeX + rightGazeX) / 2;
+    const rawY = (leftGazeY + rightGazeY) / 2;
+
+    // Remap from iris-in-eye range to 0–1 screen range and clamp
+    const screenX = Math.max(0, Math.min(1, (rawX - GAZE_MIN) / (GAZE_MAX - GAZE_MIN)));
+    const screenY = Math.max(0, Math.min(1, (rawY - GAZE_MIN) / (GAZE_MAX - GAZE_MIN)));
+
+    return { x: screenX, y: screenY };
+}
+
 // Process face mesh results
 function onResults(results) {
     overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-    if (results.multiFaceLandmarks) {
-        for (const landmarks of results.multiFaceLandmarks) {
-            // Use iris center landmarks (available with refineLandmarks: true)
-            // 468 = left iris center, 473 = right iris center
-            const leftIris = landmarks[468];
-            const rightIris = landmarks[473];
+    if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) return;
 
-            if (leftIris && rightIris) {
-                const gazePoint = {
-                    x: (leftIris.x + rightIris.x) / 2,
-                    y: (leftIris.y + rightIris.y) / 2
-                };
+    const gaze = estimateGaze(results.multiFaceLandmarks[0]);
+    if (!gaze) return;
 
-                // Draw cross at gaze point
-                drawCross(gazePoint);
-            }
-        }
+    // Exponential moving average to smooth out jitter
+    if (!smoothedGaze) {
+        smoothedGaze = gaze;
+    } else {
+        smoothedGaze = {
+            x: smoothedGaze.x + SMOOTHING * (gaze.x - smoothedGaze.x),
+            y: smoothedGaze.y + SMOOTHING * (gaze.y - smoothedGaze.y),
+        };
     }
+
+    drawCross(smoothedGaze);
 }
 
 // Draw cross at gaze point
@@ -120,6 +161,7 @@ async function startTracking() {
         initOverlay();
     }
     
+    smoothedGaze = null;
     isTracking = true;
     document.getElementById('startBtn').disabled = true;
     document.getElementById('stopBtn').disabled = false;
@@ -129,6 +171,7 @@ async function startTracking() {
 // Stop tracking
 function stopTracking() {
     isTracking = false;
+    smoothedGaze = null;
 
     if (camera) {
         camera.stop();
