@@ -214,26 +214,34 @@ function drawCross(point) {
 
 // Start tracking
 async function startTracking() {
-    if (!faceMesh) {
-        await initFaceMesh();
-    }
-
-    if (!camera) {
-        await initCamera();
-    }
-
-    if (!overlayCanvas) {
-        initOverlay();
-    }
-
-    smoothedGaze = null;
-    isTracking = true;
     document.getElementById('startBtn').disabled = true;
-    document.getElementById('stopBtn').disabled = false;
-    document.getElementById('calibrateBtn').disabled = false;
-    document.getElementById('status').textContent = calibration
-        ? 'Tracking active'
-        : 'Tracking active — click Calibrate for better accuracy';
+    document.getElementById('status').textContent = 'Starting...';
+
+    try {
+        if (!faceMesh) {
+            await initFaceMesh();
+        }
+
+        if (!camera) {
+            await initCamera();
+        }
+
+        if (!overlayCanvas) {
+            initOverlay();
+        }
+
+        smoothedGaze = null;
+        isTracking = true;
+        document.getElementById('stopBtn').disabled = false;
+        document.getElementById('calibrateBtn').disabled = false;
+
+        // Auto-launch calibration on first start
+        startCalibration();
+
+    } catch (error) {
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('status').textContent = 'Error: ' + error.message;
+    }
 }
 
 // Stop tracking
