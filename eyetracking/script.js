@@ -66,7 +66,7 @@ class BlinkCounter {
     async startDetection() {
         try {
             this.hideError();
-            this.updateStatus('<div class="loading"></div>Initializing camera...');
+            this.updateStatus('Initializing camera...', true);
             
             // Request camera access
             this.stream = await navigator.mediaDevices.getUserMedia({ 
@@ -167,10 +167,13 @@ class BlinkCounter {
                 margin: 15px 0;
                 font-size: 0.9rem;
             `;
-            instructions.innerHTML = `
-                <strong>Manual Mode Active</strong><br>
-                Automatic blink detection is not available. Use the spacebar to manually count your blinks.
-            `;
+            const strong = document.createElement('strong');
+            strong.textContent = 'Manual Mode Active';
+            instructions.appendChild(strong);
+            instructions.appendChild(document.createElement('br'));
+            instructions.appendChild(document.createTextNode(
+                'Automatic blink detection is not available. Use the spacebar to manually count your blinks.'
+            ));
             this.errorElement.parentNode.insertBefore(instructions, this.errorElement.nextSibling);
         }
     }
@@ -379,8 +382,14 @@ class BlinkCounter {
         this.blinksPerMinElement.textContent = blinksPerMinute.toString();
     }
 
-    updateStatus(message) {
-        this.statusElement.innerHTML = message;
+    updateStatus(message, showSpinner = false) {
+        this.statusElement.textContent = '';
+        if (showSpinner) {
+            const spinner = document.createElement('div');
+            spinner.className = 'loading';
+            this.statusElement.appendChild(spinner);
+        }
+        this.statusElement.appendChild(document.createTextNode(message));
     }
 
     showError(message) {
