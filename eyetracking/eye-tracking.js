@@ -5,45 +5,46 @@ let isTracking = false;
 let overlayCanvas;
 let overlayCtx;
 let resizeHandler;
+
+// Smoothing
+const SMOOTHING = 0.25;         // exponential factor after median filter
+const HISTORY_SIZE = 9;         // frames in median window (~300ms at 30fps)
+let gazeHistory = [];
 let smoothedGaze = null;
 
-// Lower = smoother but more lag, higher = more responsive but jittery
-const SMOOTHING = 0.15;
-
-// --- Calibration state ---
+// Calibration
 let isCalibrating = false;
 let calibrationStep = 0;
 let calibrationSamples = [];
-let calibration = null; // { minX, maxX, minY, maxY } set after calibration
+let calibration = null;
 
-const SAMPLES_PER_STEP = 60; // frames to average (~2s at 30fps)
+const SAMPLES_PER_STEP = 90;    // ~3 seconds at 30fps
 
 const CALIBRATION_STEPS = [
-    { label: 'Look at the dot on the LEFT',   dotX: 0.05, dotY: 0.5,  axis: 'x', type: 'min' },
-    { label: 'Look at the dot on the RIGHT',  dotX: 0.95, dotY: 0.5,  axis: 'x', type: 'max' },
-    { label: 'Look at the dot at the TOP',    dotX: 0.5,  dotY: 0.05, axis: 'y', type: 'min' },
-    { label: 'Look at the dot at the BOTTOM', dotX: 0.5,  dotY: 0.95, axis: 'y', type: 'max' },
+    { label: 'Look at the dot on the LEFT',    dotX: 0.05, dotY: 0.5,  axis: 'x', type: 'min' },
+    { label: 'Look at the dot on the RIGHT',   dotX: 0.95, dotY: 0.5,  axis: 'x', type: 'max' },
+    { label: 'Look at the dot at the TOP',     dotX: 0.5,  dotY: 0.05, axis: 'y', type: 'min' },
+    { label: 'Look at the dot at the BOTTOM',  dotX: 0.5,  dotY: 0.95, axis: 'y', type: 'max' },
 ];
 
-// Initialize the face mesh model
+// ── Face mesh ────────────────────────────────────────────────────────────────
+
 async function initFaceMesh() {
     faceMesh = new FaceMesh({
-        locateFile: (file) => {
-            return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
-        }
+        locateFile: (file) =>
+            `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
     });
-
     faceMesh.setOptions({
         maxNumFaces: 1,
         refineLandmarks: true,
         minDetectionConfidence: 0.5,
         minTrackingConfidence: 0.5
     });
-
     faceMesh.onResults(onResults);
 }
 
-// Initialize the camera
+// ── Camera ───────────────────────────────────────────────────────────────────
+
 async function initCamera() {
     cameraVideo = document.createElement('video');
     cameraVideo.style.display = 'none';
@@ -51,70 +52,94 @@ async function initCamera() {
 
     camera = new Camera(cameraVideo, {
         onFrame: async () => {
-            if (isTracking) {
-                await faceMesh.send({image: cameraVideo});
-            }
+            if (isTracking) await faceMesh.send({ image: cameraVideo });
         },
         width: 640,
         height: 480
     });
-
     await camera.start();
 }
 
-// Initialize the overlay
+// ── Overlay canvas ───────────────────────────────────────────────────────────
+
 function initOverlay() {
     overlayCanvas = document.getElementById('overlay');
     overlayCtx = overlayCanvas.getContext('2d');
-
     resizeHandler = () => {
-        overlayCanvas.width = window.innerWidth;
+        overlayCanvas.width  = window.innerWidth;
         overlayCanvas.height = window.innerHeight;
     };
-
     resizeHandler();
     window.addEventListener('resize', resizeHandler);
 }
 
-// Compute raw iris ratio within the eye socket (not yet mapped to screen)
-function computeRawIrisRatio(landmarks) {
-    const leftIris  = landmarks[468]; // left iris center
-    const rightIris = landmarks[473]; // right iris center
-    if (!leftIris || !rightIris) return null;
+// ── Raw gaze signal ──────────────────────────────────────────────────────────
+//
+// Instead of iris-in-eye (small denominator → noisy), use:
+//   iris offset from nose tip, normalised by inter-ocular distance (IOD).
+//
+// • Nose tip (landmark 4) is a stable anchor that moves with the head,
+//   so the offset captures eye rotation rather than head translation.
+// • IOD auto-scales for camera distance.
 
-    // Left eye corners (33=lateral, 133=medial, 159=top, 145=bottom)
-    const leftMinX  = Math.min(landmarks[33].x,  landmarks[133].x);
-    const leftMaxX  = Math.max(landmarks[33].x,  landmarks[133].x);
-    const leftMinY  = Math.min(landmarks[159].y, landmarks[145].y);
-    const leftMaxY  = Math.max(landmarks[159].y, landmarks[145].y);
+function computeRawGaze(landmarks) {
+    const leftIris  = landmarks[468];   // left  iris centre
+    const rightIris = landmarks[473];   // right iris centre
+    const noseTip   = landmarks[4];     // nose tip
 
-    // Right eye corners (263=lateral, 362=medial, 386=top, 374=bottom)
-    const rightMinX = Math.min(landmarks[263].x, landmarks[362].x);
-    const rightMaxX = Math.max(landmarks[263].x, landmarks[362].x);
-    const rightMinY = Math.min(landmarks[386].y, landmarks[374].y);
-    const rightMaxY = Math.max(landmarks[386].y, landmarks[374].y);
+    if (!leftIris || !rightIris || !noseTip) return null;
 
-    const leftGazeX  = (leftIris.x  - leftMinX)  / (leftMaxX  - leftMinX);
-    const leftGazeY  = (leftIris.y  - leftMinY)  / (leftMaxY  - leftMinY);
-    const rightGazeX = (rightIris.x - rightMinX) / (rightMaxX - rightMinX);
-    const rightGazeY = (rightIris.y - rightMinY) / (rightMaxY - rightMinY);
+    const irisX = (leftIris.x + rightIris.x) / 2;
+    const irisY = (leftIris.y + rightIris.y) / 2;
+
+    const iod = Math.hypot(rightIris.x - leftIris.x, rightIris.y - leftIris.y);
+    if (iod < 0.005) return null;   // face too small / edge case
 
     return {
-        x: (leftGazeX + rightGazeX) / 2,
-        y: (leftGazeY + rightGazeY) / 2,
+        x: (irisX - noseTip.x) / iod,
+        y: (irisY - noseTip.y) / iod,
     };
 }
 
-// Map raw iris ratio to screen coordinates using calibration or fallback
-function estimateGaze(rawGaze) {
-    const ref = calibration || { minX: 0.2, maxX: 0.8, minY: 0.2, maxY: 0.8 };
+// ── Gaze → screen mapping ────────────────────────────────────────────────────
+
+function rawToScreen(raw) {
+    const ref = calibration || { minX: -0.6, maxX: 0.6, minY: -0.8, maxY: 0.2 };
     return {
-        x: Math.max(0, Math.min(1, (rawGaze.x - ref.minX) / (ref.maxX - ref.minX))),
-        y: Math.max(0, Math.min(1, (rawGaze.y - ref.minY) / (ref.maxY - ref.minY))),
+        x: Math.max(0, Math.min(1, (raw.x - ref.minX) / (ref.maxX - ref.minX))),
+        y: Math.max(0, Math.min(1, (raw.y - ref.minY) / (ref.maxY - ref.minY))),
     };
 }
 
-// Draw the calibration dot with a progress ring
+// ── Filtering ────────────────────────────────────────────────────────────────
+//
+// 1. Median filter over HISTORY_SIZE frames  → removes spikes (blinks, jitter)
+// 2. Exponential moving average on top       → fluid motion
+
+function applyFilters(newRaw) {
+    gazeHistory.push(newRaw);
+    if (gazeHistory.length > HISTORY_SIZE) gazeHistory.shift();
+
+    // Median
+    const xs = gazeHistory.map(p => p.x).slice().sort((a, b) => a - b);
+    const ys = gazeHistory.map(p => p.y).slice().sort((a, b) => a - b);
+    const mid = Math.floor(gazeHistory.length / 2);
+    const median = { x: xs[mid], y: ys[mid] };
+
+    // EMA
+    if (!smoothedGaze) {
+        smoothedGaze = median;
+    } else {
+        smoothedGaze = {
+            x: smoothedGaze.x + SMOOTHING * (median.x - smoothedGaze.x),
+            y: smoothedGaze.y + SMOOTHING * (median.y - smoothedGaze.y),
+        };
+    }
+    return smoothedGaze;
+}
+
+// ── Calibration dot ──────────────────────────────────────────────────────────
+
 function drawCalibrationDot() {
     const step = CALIBRATION_STEPS[calibrationStep];
     const x = step.dotX * overlayCanvas.width;
@@ -125,6 +150,7 @@ function drawCalibrationDot() {
     overlayCtx.arc(x, y, 16, 0, Math.PI * 2);
     overlayCtx.fill();
 
+    // Progress ring
     const progress = calibrationSamples.length / SAMPLES_PER_STEP;
     overlayCtx.strokeStyle = 'white';
     overlayCtx.lineWidth = 4;
@@ -133,25 +159,29 @@ function drawCalibrationDot() {
     overlayCtx.stroke();
 }
 
-// Process face mesh results
+// ── Main result handler ──────────────────────────────────────────────────────
+
 function onResults(results) {
     overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
 
-    if (isCalibrating) {
-        drawCalibrationDot();
-    }
+    if (isCalibrating) drawCalibrationDot();
 
     if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) return;
 
-    const rawGaze = computeRawIrisRatio(results.multiFaceLandmarks[0]);
-    if (!rawGaze) return;
+    const raw = computeRawGaze(results.multiFaceLandmarks[0]);
+    if (!raw) return;
 
+    // ── Calibration mode ──
     if (isCalibrating) {
-        calibrationSamples.push(rawGaze);
+        calibrationSamples.push(raw);
 
         if (calibrationSamples.length >= SAMPLES_PER_STEP) {
-            const avgX = calibrationSamples.reduce((s, p) => s + p.x, 0) / calibrationSamples.length;
-            const avgY = calibrationSamples.reduce((s, p) => s + p.y, 0) / calibrationSamples.length;
+            // Use median of samples for robustness
+            const sxs = calibrationSamples.map(p => p.x).slice().sort((a, b) => a - b);
+            const sys = calibrationSamples.map(p => p.y).slice().sort((a, b) => a - b);
+            const mid = Math.floor(calibrationSamples.length / 2);
+            const avgX = sxs[mid];
+            const avgY = sys[mid];
 
             if (!calibration) calibration = {};
             const step = CALIBRATION_STEPS[calibrationStep];
@@ -166,6 +196,7 @@ function onResults(results) {
 
             if (calibrationStep >= CALIBRATION_STEPS.length) {
                 isCalibrating = false;
+                gazeHistory = [];
                 smoothedGaze = null;
                 document.getElementById('status').textContent = 'Calibration complete — tracking active';
                 document.getElementById('calibrateBtn').disabled = false;
@@ -174,25 +205,16 @@ function onResults(results) {
                     CALIBRATION_STEPS[calibrationStep].label + '...';
             }
         }
-        return; // don't draw gaze cross during calibration
+        return;
     }
 
-    // Normal tracking
-    const gaze = estimateGaze(rawGaze);
-
-    if (!smoothedGaze) {
-        smoothedGaze = gaze;
-    } else {
-        smoothedGaze = {
-            x: smoothedGaze.x + SMOOTHING * (gaze.x - smoothedGaze.x),
-            y: smoothedGaze.y + SMOOTHING * (gaze.y - smoothedGaze.y),
-        };
-    }
-
-    drawCross(smoothedGaze);
+    // ── Normal tracking mode ──
+    const filtered = applyFilters(raw);
+    drawCross(rawToScreen(filtered));
 }
 
-// Draw cross at gaze point
+// ── Drawing ──────────────────────────────────────────────────────────────────
+
 function drawCross(point) {
     const size = 20;
     const x = point.x * overlayCanvas.width;
@@ -212,30 +234,24 @@ function drawCross(point) {
     overlayCtx.stroke();
 }
 
-// Start tracking
+// ── Controls ─────────────────────────────────────────────────────────────────
+
 async function startTracking() {
     document.getElementById('startBtn').disabled = true;
     document.getElementById('status').textContent = 'Starting...';
 
     try {
-        if (!faceMesh) {
-            await initFaceMesh();
-        }
+        if (!faceMesh)      await initFaceMesh();
+        if (!camera)        await initCamera();
+        if (!overlayCanvas) initOverlay();
 
-        if (!camera) {
-            await initCamera();
-        }
-
-        if (!overlayCanvas) {
-            initOverlay();
-        }
-
+        gazeHistory  = [];
         smoothedGaze = null;
-        isTracking = true;
-        document.getElementById('stopBtn').disabled = false;
+        isTracking   = true;
+
+        document.getElementById('stopBtn').disabled     = false;
         document.getElementById('calibrateBtn').disabled = false;
 
-        // Auto-launch calibration on first start
         startCalibration();
 
     } catch (error) {
@@ -244,79 +260,61 @@ async function startTracking() {
     }
 }
 
-// Stop tracking
 function stopTracking() {
-    isTracking = false;
+    isTracking    = false;
     isCalibrating = false;
-    smoothedGaze = null;
+    gazeHistory   = [];
+    smoothedGaze  = null;
 
-    if (camera) {
-        camera.stop();
-        camera = null;
-    }
-
-    if (cameraVideo) {
-        cameraVideo.remove();
-        cameraVideo = null;
-    }
-
+    if (camera)     { camera.stop();    camera     = null; }
+    if (cameraVideo){ cameraVideo.remove(); cameraVideo = null; }
     if (resizeHandler) {
         window.removeEventListener('resize', resizeHandler);
         resizeHandler = null;
     }
+    if (overlayCtx) overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
 
-    if (overlayCtx) {
-        overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-    }
-
-    document.getElementById('startBtn').disabled = false;
-    document.getElementById('stopBtn').disabled = true;
+    document.getElementById('startBtn').disabled     = false;
+    document.getElementById('stopBtn').disabled      = true;
     document.getElementById('calibrateBtn').disabled = true;
-    document.getElementById('status').textContent = 'Tracking stopped';
+    document.getElementById('status').textContent    = 'Tracking stopped';
 }
 
-// Start calibration sequence
 function startCalibration() {
     if (!isTracking) return;
 
-    isCalibrating = true;
-    calibrationStep = 0;
+    isCalibrating      = true;
+    calibrationStep    = 0;
     calibrationSamples = [];
-    calibration = null;
-    smoothedGaze = null;
+    calibration        = null;
+    gazeHistory        = [];
+    smoothedGaze       = null;
 
     document.getElementById('calibrateBtn').disabled = true;
     document.getElementById('status').textContent =
         CALIBRATION_STEPS[0].label + '...';
 }
 
-// Clear overlay
 function clearOverlay() {
-    if (overlayCtx) {
+    if (overlayCtx)
         overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-    }
 }
 
-// Keyboard shortcuts
+// ── Keyboard shortcuts ───────────────────────────────────────────────────────
+
 document.addEventListener('keydown', (e) => {
-    if (e.code === 'Space') {
-        if (isTracking) {
-            stopTracking();
-        } else {
-            startTracking();
-        }
-    } else if (e.code === 'KeyC') {
-        clearOverlay();
-    } else if (e.code === 'KeyK') {
-        startCalibration();
-    }
+    if      (e.code === 'Space') isTracking ? stopTracking()    : startTracking();
+    else if (e.code === 'KeyC')  clearOverlay();
+    else if (e.code === 'KeyK')  startCalibration();
 });
 
-// Initialize on page load
+// ── Init ─────────────────────────────────────────────────────────────────────
+
 window.onload = async () => {
     try {
         await initFaceMesh();
     } catch (error) {
-        document.getElementById('status').textContent = 'Error initializing face mesh: ' + error.message;
+        document.getElementById('status').textContent =
+            'Error initializing face mesh: ' + error.message;
     }
 };
