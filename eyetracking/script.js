@@ -327,18 +327,22 @@ class BlinkCounter {
         }
 
         if (this.faceMesh) {
+            this.faceMesh.close();
             this.faceMesh = null;
         }
-        
+
+        this.video.srcObject = null;
+        this.video.classList.remove('active');
+
         // Remove manual instructions if they exist
         const instructions = document.getElementById('manualInstructions');
         if (instructions) {
             instructions.remove();
         }
-        
-        this.video.classList.remove('active');
+
         this.isDetecting = false;
         this.eyeClosedFrames = 0;
+        this.sessionStartTime = null;
         this.stopSessionTimer();
         this.updateStatus('Detection stopped');
         this.startBtn.disabled = false;
