@@ -75,17 +75,18 @@
 
         video {
             width: 100vw;
-            height: 100vh;
+            height: calc(100vh - 54px); /* leave 54px for the native controls bar */
             display: block;
-            object-fit: contain;   /* preserves aspect ratio, black bars on sides/top */
+            object-fit: contain;        /* preserve aspect ratio, black bars on sides */
         }
 
-        /* Gaze overlay — same size as video element so coordinates align */
+        /* Gaze overlay must match the video element exactly */
         #gazeCanvas {
             position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: calc(100vh - 54px);
             pointer-events: none;
         }
 
