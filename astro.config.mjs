@@ -10,6 +10,13 @@ export default defineConfig({
       sidebar: [
         { label: 'Welcome', link: '/' },
         { label: 'Eye Tracking', link: '/eyetracking/' },
+        {
+          label: 'Tools',
+          items: [
+            { label: 'Overview', link: '/tools/' },
+            { label: 'CSV Loc Name Decomposer', link: '/tools/csv-decomposer/' },
+          ],
+        },
       ],
       social: [],
     }),
