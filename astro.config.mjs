@@ -18,9 +18,6 @@ export default defineConfig({
           ],
         },
       ],
-      editLink: {
-        baseUrl: 'https://github.com/Studio3xy/studio3xy.github.io/edit/main/',
-      },
     }),
   ],
 });
