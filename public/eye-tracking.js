@@ -8,7 +8,7 @@ let overlayCtx;
 async function initFaceMesh() {
     faceMesh = new FaceMesh({
         locateFile: (file) => {
-            return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+            return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/${file}`;
         }
     });
 
@@ -125,6 +125,23 @@ async function startTracking() {
 // Stop tracking
 function stopTracking() {
     isTracking = false;
+
+    // Stop the camera stream to release the webcam
+    if (camera) {
+        camera.stop();
+        camera = null;
+    }
+
+    // Remove the hidden video element created by initCamera
+    const hiddenVideo = document.querySelector('video[style*="display: none"]');
+    if (hiddenVideo) {
+        if (hiddenVideo.srcObject) {
+            hiddenVideo.srcObject.getTracks().forEach(track => track.stop());
+            hiddenVideo.srcObject = null;
+        }
+        hiddenVideo.remove();
+    }
+
     document.getElementById('startBtn').disabled = false;
     document.getElementById('stopBtn').disabled = true;
     document.getElementById('status').textContent = 'Tracking stopped';
@@ -132,6 +149,7 @@ function stopTracking() {
 
 // Clear overlay
 function clearOverlay() {
+    if (!overlayCtx) return;
     overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
 }
 
