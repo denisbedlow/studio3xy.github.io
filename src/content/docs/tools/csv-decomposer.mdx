@@ -1,0 +1,19 @@
+---
+title: CSV Loc Name Decomposer
+description: Drop a CSV file to automatically split the Loc Name column into Element ID, VFX ID, Element Type, and Version Number.
+---
+
+import CsvDecomposer from '../../../components/CsvDecomposer.astro';
+
+Accepts a CSV with the standard columns (`ID`, `Reel`, `Name`, `Source Start`, `Source End`, `Loc Name`, `Duration in Frames`) and adds four derived columns immediately after **Loc Name**:
+
+| Column | Source |
+|---|---|
+| **Element ID** | First 12 characters of Loc Name |
+| **VFX ID** | First 8 characters of Loc Name |
+| **Element Type** | Characters 10–12 of Loc Name |
+| **Version Number** | Last 3 characters of Loc Name |
+
+Drop your file below — the modified CSV downloads automatically.
+
+<CsvDecomposer />
