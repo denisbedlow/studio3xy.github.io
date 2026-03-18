@@ -8,8 +8,8 @@ export default defineConfig({
       title: 'Studio3xy',
       customCss: ['./src/styles/custom.css'],
       sidebar: [
-        { label: 'Welcome', link: '/' },
-        { label: 'Eye Tracking', link: '/eyetracking/' },
+        { slug: 'index' },
+        { slug: 'eyetracking' },
         {
           label: 'Tools',
           items: [
@@ -18,7 +18,9 @@ export default defineConfig({
           ],
         },
       ],
-      social: [],
+      editLink: {
+        baseUrl: 'https://github.com/Studio3xy/studio3xy.github.io/edit/main/',
+      },
     }),
   ],
 });

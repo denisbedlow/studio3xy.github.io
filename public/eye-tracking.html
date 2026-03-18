@@ -14,7 +14,7 @@
 </head>
 <body>
     <div class="fullscreen-container">
-        <img id="cityscape" src="https://images.unsplash.com/photo-1444723121867-7a241cacace9?w=1920&auto=format&fit=crop&q=80" alt="Aerial view of a city skyline at sunset used as the eye tracking target image">
+        <img id="cityscape" src="https://images.unsplash.com/photo-1444723121867-7a241cacace9?w=1920&auto=format&fit=crop&q=80" alt="Aerial view of a city skyline at sunset used as the eye tracking target image" loading="lazy">
         <canvas id="overlay"></canvas>
 
         <div class="controls">
@@ -26,8 +26,8 @@
         <div id="status" class="status">Click "Start Tracking" to begin</div>
     </div>
 
-    <div style="position:fixed;top:12px;left:16px;z-index:200;">
-        <a href="/eyetracking/" style="color:#fff;background:rgba(0,0,0,0.5);padding:6px 12px;border-radius:4px;text-decoration:none;font-family:sans-serif;font-size:14px;">← Back</a>
+    <div class="back-link back-link--overlay">
+        <a href="/eyetracking/">← Back</a>
     </div>
 
     <script src="/eye-tracking.js"></script>
