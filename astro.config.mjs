@@ -1,0 +1,17 @@
+import { defineConfig } from 'astro/config';
+import starlight from '@astrojs/starlight';
+
+export default defineConfig({
+  site: 'https://studio3xy.com',
+  integrations: [
+    starlight({
+      title: 'Studio3xy Playground',
+      customCss: ['./src/styles/custom.css'],
+      sidebar: [
+        { label: 'Welcome', link: '/' },
+        { label: 'Eye Tracking', link: '/eyetracking/' },
+      ],
+      social: [],
+    }),
+  ],
+});

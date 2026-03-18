@@ -1,0 +1,12 @@
+/* Match the existing Studio3xy blue accent */
+:root {
+  --sl-color-accent-low: #d0eaf8;
+  --sl-color-accent: #3498db;
+  --sl-color-accent-high: #1a6fa0;
+}
+
+:root[data-theme='dark'] {
+  --sl-color-accent-low: #1a3a52;
+  --sl-color-accent: #5aafe8;
+  --sl-color-accent-high: #a8d8f5;
+}
