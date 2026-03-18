@@ -5,7 +5,7 @@ export default defineConfig({
   site: 'https://studio3xy.com',
   integrations: [
     starlight({
-      title: 'Studio3xy Playground',
+      title: 'Studio3xy',
       customCss: ['./src/styles/custom.css'],
       sidebar: [
         { label: 'Welcome', link: '/' },
