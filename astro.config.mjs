@@ -10,6 +10,7 @@ export default defineConfig({
       sidebar: [
         { slug: 'index' },
         { slug: 'eyetracking' },
+        { slug: 'video' },
         {
           label: 'Tools',
           items: [

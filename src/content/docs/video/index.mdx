@@ -1,0 +1,113 @@
+---
+title: Video
+description: Video archive.
+---
+
+import { LinkCard } from '@astrojs/starlight/components';
+
+<div class="video-grid">
+
+{/*
+  To add a video:
+  1. Upload your MP4 to the Supabase "videos" bucket (via dashboard or CLI)
+  2. Copy the card below, replacing:
+     - href with: https://nnmkifxfhcysmhzveabp.supabase.co/storage/v1/object/public/videos/YOUR_FILE.mp4
+     - duration, title, and description
+*/}
+
+<a class="video-card" href="https://nnmkifxfhcysmhzveabp.supabase.co/storage/v1/object/public/videos/e11f9598-5b40-4dd2-871a-69440a4c3afe/file.mp4" target="_blank" rel="noopener">
+  <div class="video-thumb">
+    <span class="video-duration">00:12</span>
+  </div>
+  <div class="video-info">
+    <h3>Sample Video</h3>
+    <p>Test upload from Supabase Storage.</p>
+  </div>
+</a>
+
+<a class="video-card" href="#" target="_blank" rel="noopener">
+  <div class="video-thumb">
+    <span class="video-duration">--:--</span>
+  </div>
+  <div class="video-info">
+    <h3>Placeholder</h3>
+    <p>Upload a video to Supabase to fill this slot.</p>
+  </div>
+</a>
+
+<a class="video-card" href="#" target="_blank" rel="noopener">
+  <div class="video-thumb">
+    <span class="video-duration">--:--</span>
+  </div>
+  <div class="video-info">
+    <h3>Placeholder</h3>
+    <p>Upload a video to Supabase to fill this slot.</p>
+  </div>
+</a>
+
+</div>
+
+<style>{`
+  .video-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+  }
+
+  .video-card {
+    display: block;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.2s;
+  }
+
+  .video-card:hover {
+    border-color: var(--sl-color-accent);
+  }
+
+  .video-thumb {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    background: var(--sl-color-gray-6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .video-thumb::before {
+    content: '▶';
+    font-size: 2rem;
+    color: var(--sl-color-gray-3);
+  }
+
+  .video-duration {
+    position: absolute;
+    bottom: 0.5rem;
+    right: 0.5rem;
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    font-size: 0.75rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 0.25rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .video-info {
+    padding: 0.75rem 1rem;
+  }
+
+  .video-info h3 {
+    margin: 0 0 0.25rem;
+    font-size: 1rem;
+  }
+
+  .video-info p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--sl-color-gray-2);
+  }
+`}</style>

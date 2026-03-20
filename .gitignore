@@ -84,7 +84,7 @@ admin/
 eyetracking/
 resources/
 static/
-video/
+/video/
 welcome-copy/
 
 # Standalone legacy files
