@@ -164,7 +164,6 @@ const COLUMN_LABELS: Record<string, string> = {
 };
 
 // ─── DOM refs ───
-const root = document.getElementById('edl-root')!;
 const panelUpload = document.getElementById('panel-upload')!;
 const panelOptions = document.getElementById('panel-options')!;
 const panelPreview = document.getElementById('panel-preview')!;
@@ -382,14 +381,14 @@ function escCsv(val: string, sep: string): string {
 
 function toCsv(events: EdlEvent[], cols: string[], sep: string): string {
   const header = cols.map(c => COLUMN_LABELS[c] || c).join(sep);
-  const rows = events.map(e => cols.map(c => escCsv((e as Record<string, string>)[c] || '', sep)).join(sep));
+  const rows = events.map(e => cols.map(c => escCsv((e as unknown as Record<string, string>)[c] || '', sep)).join(sep));
   return [header, ...rows].join('\n');
 }
 
 function toJson(events: EdlEvent[], cols: string[]): string {
   const filtered = events.map(e => {
     const obj: Record<string, string> = {};
-    for (const c of cols) obj[COLUMN_LABELS[c] || c] = (e as Record<string, string>)[c] || '';
+    for (const c of cols) obj[COLUMN_LABELS[c] || c] = (e as unknown as Record<string, string>)[c] || '';
     return obj;
   });
   return JSON.stringify(filtered, null, 2);
@@ -457,7 +456,7 @@ function renderPreview(events: EdlEvent[], cols: string[]) {
     const tr = document.createElement('tr');
     for (const c of cols) {
       const td = document.createElement('td');
-      td.textContent = (events[i] as Record<string, string>)[c] || '';
+      td.textContent = (events[i] as unknown as Record<string, string>)[c] || '';
       tr.appendChild(td);
     }
     tbody.appendChild(tr);
