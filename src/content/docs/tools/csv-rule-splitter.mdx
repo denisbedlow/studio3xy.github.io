@@ -1,0 +1,20 @@
+---
+title: CSV Column Splitter
+description: Upload any CSV and define rules to split columns into multiple derived columns — by delimiter, regex, or character positions.
+---
+
+import CsvRuleSplitter from '../../../components/CsvRuleSplitter.astro';
+
+## Overview
+
+A generalised version of the [CSV Loc Name Decomposer](/tools/csv-decomposer/). Upload any CSV, then define one or more rules to split a source column into new derived columns. Three split modes are available:
+
+| Mode | How it works |
+|---|---|
+| **Delimiter** | Splits on a character string — e.g. `_` turns `A_B_C` into three columns |
+| **Regex** | Extracts capture groups — e.g. `^(\w+)_(\d+)$` yields two columns |
+| **Character positions** | Extracts by index range (0-indexed, exclusive end) — same approach as the Loc Name Decomposer |
+
+Multiple rules can be stacked. Each rule inserts its output columns immediately after the source column. Drop your file below to get started.
+
+<CsvRuleSplitter />

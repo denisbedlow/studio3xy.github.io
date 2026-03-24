@@ -1,0 +1,885 @@
+---
+// src/components/CsvRuleSplitter.astro
+// Fully client-side CSV column splitter with user-defined rules.
+// No props / no server logic needed.
+---
+
+<div class="crs" id="crs-root">
+
+  <!-- ══════════ UPLOAD PANEL ══════════ -->
+  <div class="crs-panel" id="panel-upload">
+    <label class="crs-dropzone" id="crs-dropzone">
+      <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+      <span class="crs-drop-primary">Drop your CSV file here</span>
+      <span class="crs-drop-hint">or click to browse</span>
+      <input type="file" accept=".csv" id="crs-file-input" />
+    </label>
+  </div>
+
+  <!-- ══════════ RULES PANEL ══════════ -->
+  <div class="crs-panel" id="panel-rules" style="display:none">
+    <div class="crs-file-badge" id="crs-file-badge"></div>
+
+    <div id="crs-rules-list" class="crs-rules-list"></div>
+
+    <button class="crs-add-rule-btn" id="crs-add-rule-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Add Rule
+    </button>
+
+    <div class="crs-empty-rules" id="crs-empty-rules">
+      No rules yet — add one above to start transforming columns.
+    </div>
+
+    <div class="crs-footer">
+      <button class="crs-btn crs-btn--ghost" id="crs-restart-btn">↺ Start Over</button>
+      <button class="crs-btn crs-btn--primary" id="crs-preview-btn">Preview Result →</button>
+    </div>
+  </div>
+
+  <!-- ══════════ PREVIEW PANEL ══════════ -->
+  <div class="crs-panel" id="panel-preview" style="display:none">
+    <p class="crs-preview-meta" id="crs-preview-meta"></p>
+    <div class="crs-table-wrap" id="crs-table-wrap"></div>
+    <div class="crs-footer">
+      <button class="crs-btn crs-btn--ghost" id="crs-back-btn">← Back to Rules</button>
+      <button class="crs-btn crs-btn--primary" id="crs-download-btn">↓ Download CSV</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     STYLES
+════════════════════════════════════════════════ -->
+<style>
+.crs {
+  font-family: inherit;
+  max-width: 960px;
+  color: var(--sl-color-text);
+}
+
+/* ── Panels ── */
+.crs-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ── Drop zone ── */
+.crs-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  border: 2px dashed var(--sl-color-gray-4, #4a4a5a);
+  border-radius: 10px;
+  padding: 3.5rem 2rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: center;
+  color: var(--sl-color-gray-2, #aaa);
+}
+.crs-dropzone:hover,
+.crs-dropzone.drag-over {
+  border-color: var(--sl-color-accent, #7e57ff);
+  background: color-mix(in srgb, var(--sl-color-accent, #7e57ff) 7%, transparent);
+}
+.crs-dropzone input[type="file"] {
+  position: absolute;
+  width: 0; height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.crs-drop-primary {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--sl-color-white, #fff);
+}
+.crs-drop-hint {
+  font-size: 0.82rem;
+  opacity: 0.55;
+}
+
+/* ── File badge ── */
+.crs-file-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 0.4rem 0.8rem;
+  background: color-mix(in srgb, var(--sl-color-accent, #7e57ff) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sl-color-accent, #7e57ff) 35%, transparent);
+  border-radius: 5px;
+  color: var(--sl-color-text-accent, var(--sl-color-accent, #7e57ff));
+  width: fit-content;
+}
+
+/* ── Rules list ── */
+.crs-rules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.crs-empty-rules {
+  font-size: 0.82rem;
+  color: var(--sl-color-gray-3, #888);
+  padding: 0.5rem 0;
+}
+
+/* ── Rule card ── */
+.crs-card {
+  border: 1px solid var(--sl-color-gray-5, #333);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.crs-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0.9rem;
+  background: var(--sl-color-gray-6, #1e1e2a);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sl-color-gray-2, #aaa);
+}
+.crs-card-body {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.crs-del-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--sl-color-gray-3, #888);
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  line-height: 1;
+  transition: color 0.12s, background 0.12s;
+}
+.crs-del-btn:hover { color: #f87171; background: rgba(248,113,113,0.12); }
+
+/* ── Form layout ── */
+.crs-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+.crs-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 1;
+  min-width: 160px;
+}
+.crs-field.crs-field--fixed { flex: none; }
+.crs-label {
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--sl-color-gray-2, #aaa);
+}
+.crs-hint {
+  font-size: 0.72rem;
+  color: var(--sl-color-gray-3, #888);
+  font-style: italic;
+  margin-top: 0.15rem;
+}
+.crs-select,
+.crs-input {
+  background: var(--sl-color-gray-6, #1a1a26);
+  border: 1px solid var(--sl-color-gray-5, #333);
+  border-radius: 5px;
+  padding: 0.38rem 0.6rem;
+  color: var(--sl-color-white, #fff);
+  font-size: 0.85rem;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.13s;
+}
+.crs-select:focus,
+.crs-input:focus {
+  outline: none;
+  border-color: var(--sl-color-accent, #7e57ff);
+}
+.crs-input--mono { font-family: monospace; }
+.crs-input--sm { max-width: 80px; }
+
+/* ── Output columns ── */
+.crs-out-cols {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+.crs-out-col {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.crs-out-num {
+  font-size: 0.7rem;
+  color: var(--sl-color-gray-3, #888);
+  min-width: 14px;
+  text-align: right;
+}
+.crs-col-input {
+  background: var(--sl-color-gray-6, #1a1a26);
+  border: 1px solid var(--sl-color-gray-5, #333);
+  border-radius: 4px;
+  padding: 0.28rem 0.5rem;
+  color: var(--sl-color-white, #fff);
+  font-size: 0.8rem;
+  width: 130px;
+  transition: border-color 0.13s;
+}
+.crs-col-input:focus {
+  outline: none;
+  border-color: var(--sl-color-accent, #7e57ff);
+}
+.crs-icon-btn {
+  background: none;
+  border: 1px solid var(--sl-color-gray-5, #333);
+  border-radius: 4px;
+  padding: 0.22rem 0.45rem;
+  cursor: pointer;
+  color: var(--sl-color-gray-2, #aaa);
+  font-size: 0.85rem;
+  line-height: 1;
+  transition: all 0.12s;
+}
+.crs-icon-btn:hover {
+  border-color: var(--sl-color-accent, #7e57ff);
+  color: var(--sl-color-accent, #7e57ff);
+}
+
+/* ── Char position ranges ── */
+.crs-ranges {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.crs-range-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+}
+.crs-range-lbl {
+  color: var(--sl-color-gray-3, #888);
+  min-width: 52px;
+  font-size: 0.75rem;
+}
+.crs-range-del {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--sl-color-gray-4, #666);
+  padding: 0 4px;
+  font-size: 0.9rem;
+  line-height: 1;
+  transition: color 0.12s;
+}
+.crs-range-del:hover { color: #f87171; }
+.crs-add-range-btn {
+  background: none;
+  border: 1px dashed var(--sl-color-gray-5, #333);
+  border-radius: 4px;
+  padding: 0.22rem 0.7rem;
+  cursor: pointer;
+  color: var(--sl-color-gray-3, #888);
+  font-size: 0.78rem;
+  margin-top: 0.15rem;
+  width: fit-content;
+  transition: all 0.12s;
+}
+.crs-add-range-btn:hover {
+  border-color: var(--sl-color-accent, #7e57ff);
+  color: var(--sl-color-accent, #7e57ff);
+}
+
+/* ── Add-rule button ── */
+.crs-add-rule-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: none;
+  border: 1px dashed var(--sl-color-gray-4, #555);
+  border-radius: 7px;
+  padding: 0.55rem 1rem;
+  cursor: pointer;
+  color: var(--sl-color-gray-2, #aaa);
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.12s;
+  align-self: flex-start;
+}
+.crs-add-rule-btn:hover {
+  border-color: var(--sl-color-accent, #7e57ff);
+  color: var(--sl-color-accent, #7e57ff);
+}
+
+/* ── Buttons ── */
+.crs-btn {
+  padding: 0.52rem 1.1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.13s;
+  border: none;
+}
+.crs-btn--primary {
+  background: var(--sl-color-accent, #7e57ff);
+  color: #fff;
+}
+.crs-btn--primary:hover { filter: brightness(1.12); }
+.crs-btn--ghost {
+  background: none;
+  border: 1px solid var(--sl-color-gray-5, #333);
+  color: var(--sl-color-gray-2, #aaa);
+}
+.crs-btn--ghost:hover {
+  border-color: var(--sl-color-gray-3, #888);
+  color: var(--sl-color-white, #fff);
+}
+
+.crs-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--sl-color-gray-6, #1e1e2a);
+  margin-top: 0.25rem;
+}
+
+/* ── Preview table ── */
+.crs-preview-meta {
+  font-size: 0.8rem;
+  color: var(--sl-color-gray-2, #aaa);
+  margin: 0;
+}
+.crs-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--sl-color-gray-5, #333);
+  border-radius: 7px;
+}
+.crs-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+.crs-table-wrap th {
+  background: var(--sl-color-gray-6, #1e1e2a);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--sl-color-gray-5, #333);
+  color: var(--sl-color-gray-2, #aaa);
+}
+.crs-table-wrap th.new {
+  color: var(--sl-color-text-accent, var(--sl-color-accent, #7e57ff));
+  background: color-mix(in srgb, var(--sl-color-accent, #7e57ff) 10%, var(--sl-color-gray-6, #1e1e2a));
+}
+.crs-table-wrap td {
+  padding: 0.38rem 0.75rem;
+  border-bottom: 1px solid var(--sl-color-gray-6, #1e1e2a);
+  white-space: nowrap;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.crs-table-wrap td.new {
+  background: color-mix(in srgb, var(--sl-color-accent, #7e57ff) 5%, transparent);
+  color: var(--sl-color-text-accent, var(--sl-color-accent, #7e57ff));
+  font-weight: 500;
+}
+.crs-table-wrap tr:last-child td { border-bottom: none; }
+</style>
+
+<!-- ═══════════════════════════════════════════════
+     SCRIPT
+════════════════════════════════════════════════ -->
+<script>
+// ────────────────────────────────────────────────────────────
+// State
+// ────────────────────────────────────────────────────────────
+let csvData = null;   // { headers: string[], rows: string[][], filename: string }
+let rules   = [];     // RuleConfig[]
+let ruleCounter = 0;
+
+// ────────────────────────────────────────────────────────────
+// DOM refs
+// ────────────────────────────────────────────────────────────
+const panelUpload   = /** @type {HTMLElement} */ (document.getElementById('panel-upload'));
+const panelRules    = /** @type {HTMLElement} */ (document.getElementById('panel-rules'));
+const panelPreview  = /** @type {HTMLElement} */ (document.getElementById('panel-preview'));
+const dropzone      = /** @type {HTMLElement} */ (document.getElementById('crs-dropzone'));
+const fileInput     = /** @type {HTMLInputElement} */ (document.getElementById('crs-file-input'));
+const fileBadge     = /** @type {HTMLElement} */ (document.getElementById('crs-file-badge'));
+const rulesList     = /** @type {HTMLElement} */ (document.getElementById('crs-rules-list'));
+const emptyRules    = /** @type {HTMLElement} */ (document.getElementById('crs-empty-rules'));
+const addRuleBtn    = /** @type {HTMLElement} */ (document.getElementById('crs-add-rule-btn'));
+const previewBtn    = /** @type {HTMLElement} */ (document.getElementById('crs-preview-btn'));
+const restartBtn    = /** @type {HTMLElement} */ (document.getElementById('crs-restart-btn'));
+const backBtn       = /** @type {HTMLElement} */ (document.getElementById('crs-back-btn'));
+const downloadBtn   = /** @type {HTMLElement} */ (document.getElementById('crs-download-btn'));
+const previewMeta   = /** @type {HTMLElement} */ (document.getElementById('crs-preview-meta'));
+const tableWrap     = /** @type {HTMLElement} */ (document.getElementById('crs-table-wrap'));
+
+// ────────────────────────────────────────────────────────────
+// Panel navigation
+// ────────────────────────────────────────────────────────────
+function showPanel(id) {
+  for (const p of [panelUpload, panelRules, panelPreview]) {
+    p.style.display = p.id === id ? 'flex' : 'none';
+  }
+}
+
+// ────────────────────────────────────────────────────────────
+// File upload
+// ────────────────────────────────────────────────────────────
+dropzone.addEventListener('click', () => fileInput.click());
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzone.classList.remove('drag-over');
+  const file = e.dataTransfer?.files[0];
+  if (file) handleFile(file);
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files?.[0]) handleFile(fileInput.files[0]);
+});
+
+function handleFile(file) {
+  if (!file.name.toLowerCase().endsWith('.csv')) {
+    alert('Please select a .csv file.');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const parsed = parseCSV(/** @type {string} */ (e.target?.result));
+    if (!parsed) { alert('Could not parse this file. Is it a valid CSV?'); return; }
+    csvData = { ...parsed, filename: file.name };
+    fileBadge.textContent = `📄 ${file.name}  ·  ${parsed.headers.length} columns  ·  ${parsed.rows.length} rows`;
+    rules = [];
+    ruleCounter = 0;
+    rulesList.innerHTML = '';
+    updateEmptyState();
+    showPanel('panel-rules');
+  };
+  reader.readAsText(file);
+}
+
+// ────────────────────────────────────────────────────────────
+// CSV parsing
+// ────────────────────────────────────────────────────────────
+function parseCSV(text) {
+  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim().split('\n');
+  if (!lines.length) return null;
+  const headers = parseCSVLine(lines[0]);
+  const rows = lines.slice(1).filter(l => l.trim()).map(parseCSVLine);
+  return { headers, rows };
+}
+
+function parseCSVLine(line) {
+  const cols = [];
+  let cur = '';
+  let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQ && line[i + 1] === '"') { cur += '"'; i++; }
+      else inQ = !inQ;
+    } else if (ch === ',' && !inQ) {
+      cols.push(cur); cur = '';
+    } else {
+      cur += ch;
+    }
+  }
+  cols.push(cur);
+  return cols;
+}
+
+// ────────────────────────────────────────────────────────────
+// Rule management
+// ────────────────────────────────────────────────────────────
+function updateEmptyState() {
+  emptyRules.style.display = rules.length === 0 ? 'block' : 'none';
+}
+
+addRuleBtn.addEventListener('click', () => {
+  if (!csvData) return;
+  const rule = {
+    id: ++ruleCounter,
+    sourceColumn: csvData.headers[0] ?? '',
+    type: 'delimiter',          // 'delimiter' | 'regex' | 'charpos'
+    delimiter: '_',
+    pattern: '(.*)',
+    ranges: [{ start: 0, end: 8, name: 'Part 1' }],
+    outputColumns: ['Part 1', 'Part 2'],
+  };
+  rules.push(rule);
+  appendRuleCard(rule);
+  updateEmptyState();
+});
+
+function appendRuleCard(rule) {
+  const card = document.createElement('div');
+  card.className = 'crs-card';
+  card.dataset.id = String(rule.id);
+  refreshCardHTML(card, rule);
+  rulesList.appendChild(card);
+}
+
+function refreshCardHTML(card, rule) {
+  card.innerHTML = buildCardHTML(rule);
+  bindCardEvents(card, rule);
+}
+
+function buildCardHTML(rule) {
+  const colOpts = csvData.headers
+    .map(h => `<option value="${esc(h)}"${h === rule.sourceColumn ? ' selected' : ''}>${esc(h)}</option>`)
+    .join('');
+
+  return `
+    <div class="crs-card-head">
+      <span>Rule ${rule.id}</span>
+      <button class="crs-del-btn" data-act="del-rule" title="Remove rule">✕</button>
+    </div>
+    <div class="crs-card-body">
+      <div class="crs-row">
+        <div class="crs-field">
+          <label class="crs-label">Source column</label>
+          <select class="crs-select" data-bind="sourceColumn">${colOpts}</select>
+        </div>
+        <div class="crs-field">
+          <label class="crs-label">Split method</label>
+          <select class="crs-select" data-bind="type">
+            <option value="delimiter"${rule.type==='delimiter'?' selected':''}>Delimiter</option>
+            <option value="regex"${rule.type==='regex'?' selected':''}>Regex  (capture groups)</option>
+            <option value="charpos"${rule.type==='charpos'?' selected':''}>Character positions</option>
+          </select>
+        </div>
+      </div>
+      <div data-section="type-opts">
+        ${buildTypeOptsHTML(rule)}
+      </div>
+    </div>`;
+}
+
+function buildTypeOptsHTML(rule) {
+  if (rule.type === 'delimiter') {
+    return `
+      <div class="crs-row">
+        <div class="crs-field crs-field--fixed" style="min-width:0;max-width:200px">
+          <label class="crs-label">Delimiter character(s)</label>
+          <input class="crs-input" data-bind="delimiter" value="${esc(rule.delimiter)}" placeholder="e.g.  _  or  ,  or  –" />
+        </div>
+      </div>
+      ${buildOutColsHTML(rule)}`;
+  }
+  if (rule.type === 'regex') {
+    return `
+      <div class="crs-field">
+        <label class="crs-label">Pattern  <span class="crs-hint">(each capture group → one output column)</span></label>
+        <input class="crs-input crs-input--mono" data-bind="pattern" value="${esc(rule.pattern)}" placeholder="e.g. ^(\\w+)_(\\d+)$" />
+        <span class="crs-hint">Tab out of the field to sync output column count.</span>
+      </div>
+      ${buildOutColsHTML(rule)}`;
+  }
+  if (rule.type === 'charpos') {
+    const rangesHTML = rule.ranges.map((r, i) => `
+      <div class="crs-range-row" data-ri="${i}">
+        <span class="crs-range-lbl">Range ${i + 1}</span>
+        <span class="crs-label" style="white-space:nowrap">from</span>
+        <input class="crs-input crs-input--sm" type="number" min="0" data-rp="start" value="${r.start}" />
+        <span class="crs-label">to</span>
+        <input class="crs-input crs-input--sm" type="number" min="0" data-rp="end" value="${r.end}" />
+        <span class="crs-label" style="white-space:nowrap;margin-left:.25rem">→ column name</span>
+        <input class="crs-col-input" data-rp="name" value="${esc(r.name)}" placeholder="Column name" />
+        ${rule.ranges.length > 1 ? `<button class="crs-range-del" data-act="del-range" data-ri="${i}" title="Remove range">✕</button>` : ''}
+      </div>`).join('');
+    return `
+      <div class="crs-field">
+        <label class="crs-label">Ranges  <span class="crs-hint">(0-indexed, end is exclusive like .slice)</span></label>
+        <div class="crs-ranges" data-section="ranges">${rangesHTML}</div>
+        <button class="crs-add-range-btn" data-act="add-range">+ Add Range</button>
+      </div>`;
+  }
+  return '';
+}
+
+function buildOutColsHTML(rule) {
+  const inputs = rule.outputColumns.map((name, i) => `
+    <div class="crs-out-col">
+      <span class="crs-out-num">${i + 1}</span>
+      <input class="crs-col-input" data-ci="${i}" value="${esc(name)}" placeholder="Column ${i + 1}" />
+      ${rule.outputColumns.length > 1
+        ? `<button class="crs-icon-btn" data-act="del-col" data-ci="${i}" title="Remove column">−</button>`
+        : ''}
+    </div>`).join('');
+  return `
+    <div class="crs-field">
+      <label class="crs-label">Output column names</label>
+      <div class="crs-out-cols" data-section="out-cols">
+        ${inputs}
+        <button class="crs-icon-btn" data-act="add-col" title="Add column">+</button>
+      </div>
+    </div>`;
+}
+
+// ────────────────────────────────────────────────────────────
+// Event binding
+// ────────────────────────────────────────────────────────────
+function bindCardEvents(card, rule) {
+  // Delete card
+  card.querySelector('[data-act="del-rule"]')?.addEventListener('click', () => {
+    rules = rules.filter(r => r.id !== rule.id);
+    card.remove();
+    updateEmptyState();
+  });
+
+  // Source column
+  card.querySelector('[data-bind="sourceColumn"]')?.addEventListener('change', e => {
+    rule.sourceColumn = e.target.value;
+  });
+
+  // Type select — rebuild type section
+  card.querySelector('[data-bind="type"]')?.addEventListener('change', e => {
+    rule.type = e.target.value;
+    if (rule.type === 'charpos') {
+      rule.ranges = [{ start: 0, end: 8, name: 'Part 1' }];
+    } else {
+      if (!rule.outputColumns.length) rule.outputColumns = ['Part 1', 'Part 2'];
+    }
+    const section = card.querySelector('[data-section="type-opts"]');
+    if (section) { section.innerHTML = buildTypeOptsHTML(rule); bindTypeOptsEvents(card, rule); }
+  });
+
+  bindTypeOptsEvents(card, rule);
+}
+
+function bindTypeOptsEvents(card, rule) {
+  // Delimiter
+  const delimInput = card.querySelector('[data-bind="delimiter"]');
+  delimInput?.addEventListener('input', e => { rule.delimiter = e.target.value; });
+
+  // Regex pattern
+  const patInput = card.querySelector('[data-bind="pattern"]');
+  if (patInput) {
+    patInput.addEventListener('input', e => { rule.pattern = e.target.value; });
+    patInput.addEventListener('blur', () => {
+      const n = countGroups(rule.pattern);
+      if (n > 0 && n !== rule.outputColumns.length) {
+        while (rule.outputColumns.length < n) rule.outputColumns.push(`Group ${rule.outputColumns.length + 1}`);
+        while (rule.outputColumns.length > n) rule.outputColumns.pop();
+        rebuildTypeOpts(card, rule);
+      }
+    });
+  }
+
+  // Output column names
+  card.querySelectorAll('[data-ci]').forEach(input => {
+    if (input.tagName === 'INPUT') {
+      input.addEventListener('input', e => {
+        rule.outputColumns[Number(input.dataset.ci)] = e.target.value;
+      });
+    }
+  });
+
+  // Add output column
+  card.querySelector('[data-act="add-col"]')?.addEventListener('click', () => {
+    rule.outputColumns.push(`Part ${rule.outputColumns.length + 1}`);
+    rebuildTypeOpts(card, rule);
+  });
+
+  // Remove output column
+  card.querySelectorAll('[data-act="del-col"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      rule.outputColumns.splice(Number(btn.dataset.ci), 1);
+      rebuildTypeOpts(card, rule);
+    });
+  });
+
+  // Char position range inputs
+  if (rule.type === 'charpos') {
+    card.querySelectorAll('.crs-range-row').forEach(row => {
+      const ri = Number(row.dataset.ri);
+      row.querySelectorAll('[data-rp]').forEach(input => {
+        input.addEventListener('input', e => {
+          const prop = input.dataset.rp;
+          if (prop === 'start' || prop === 'end') rule.ranges[ri][prop] = parseInt(e.target.value) || 0;
+          else rule.ranges[ri][prop] = e.target.value;
+        });
+      });
+    });
+
+    // Delete range
+    card.querySelectorAll('[data-act="del-range"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        rule.ranges.splice(Number(btn.dataset.ri), 1);
+        rebuildTypeOpts(card, rule);
+      });
+    });
+
+    // Add range
+    card.querySelector('[data-act="add-range"]')?.addEventListener('click', () => {
+      const last = rule.ranges[rule.ranges.length - 1];
+      const s = last ? last.end : 0;
+      rule.ranges.push({ start: s, end: s + 4, name: `Part ${rule.ranges.length + 1}` });
+      rebuildTypeOpts(card, rule);
+    });
+  }
+}
+
+function rebuildTypeOpts(card, rule) {
+  const section = card.querySelector('[data-section="type-opts"]');
+  if (section) { section.innerHTML = buildTypeOptsHTML(rule); bindTypeOptsEvents(card, rule); }
+}
+
+// ────────────────────────────────────────────────────────────
+// Transform logic
+// ────────────────────────────────────────────────────────────
+function applyRules(data, ruleSet) {
+  let headers = [...data.headers];
+  let rows = data.rows.map(r => [...r]);
+
+  for (const rule of ruleSet) {
+    const srcIdx = headers.indexOf(rule.sourceColumn);
+    if (srcIdx === -1) continue;
+
+    const newCols = rule.type === 'charpos'
+      ? rule.ranges.map(r => r.name || '')
+      : rule.outputColumns;
+
+    const insertAt = srcIdx + 1;
+    headers = [...headers.slice(0, insertAt), ...newCols, ...headers.slice(insertAt)];
+    rows = rows.map(row => {
+      const val = row[srcIdx] ?? '';
+      const parts = splitValue(val, rule, newCols.length);
+      return [...row.slice(0, insertAt), ...parts, ...row.slice(insertAt)];
+    });
+  }
+  return { headers, rows };
+}
+
+function splitValue(val, rule, count) {
+  let parts = [];
+  if (rule.type === 'delimiter') {
+    parts = val.split(rule.delimiter);
+  } else if (rule.type === 'regex') {
+    try {
+      const m = val.match(new RegExp(rule.pattern));
+      parts = m ? m.slice(1) : [];
+    } catch { parts = []; }
+  } else if (rule.type === 'charpos') {
+    return rule.ranges.map(r => val.slice(r.start, r.end));
+  }
+  while (parts.length < count) parts.push('');
+  return parts.slice(0, count);
+}
+
+function countGroups(pattern) {
+  let count = 0;
+  for (let i = 0; i < pattern.length; i++) {
+    if (pattern[i] === '\\') { i++; continue; }
+    if (pattern[i] === '(' && pattern[i + 1] !== '?') count++;
+  }
+  return count;
+}
+
+// ────────────────────────────────────────────────────────────
+// Preview
+// ────────────────────────────────────────────────────────────
+previewBtn.addEventListener('click', () => {
+  if (!rules.length) { alert('Add at least one rule before previewing.'); return; }
+  renderPreview();
+  showPanel('panel-preview');
+});
+
+function renderPreview() {
+  const t = applyRules(csvData, rules);
+  const origSet = new Set(csvData.headers);
+  const newSet  = new Set(t.headers.filter(h => !origSet.has(h)));
+
+  const previewRows = t.rows.slice(0, 12);
+  previewMeta.textContent =
+    `Showing ${previewRows.length} of ${t.rows.length} rows  ·  ${t.headers.length} columns  ·  `
+    + `new columns highlighted`;
+
+  const thead = `<thead><tr>${t.headers.map(h =>
+    `<th class="${newSet.has(h) ? 'new' : ''}">${esc(h)}</th>`
+  ).join('')}</tr></thead>`;
+
+  const tbody = `<tbody>${previewRows.map(row =>
+    `<tr>${t.headers.map((h, i) =>
+      `<td class="${newSet.has(h) ? 'new' : ''}" title="${esc(row[i] ?? '')}">${esc(row[i] ?? '')}</td>`
+    ).join('')}</tr>`
+  ).join('')}</tbody>`;
+
+  tableWrap.innerHTML = `<table>${thead}${tbody}</table>`;
+}
+
+backBtn.addEventListener('click', () => showPanel('panel-rules'));
+
+// ────────────────────────────────────────────────────────────
+// Download
+// ────────────────────────────────────────────────────────────
+downloadBtn.addEventListener('click', () => {
+  const t = applyRules(csvData, rules);
+  const csv = [t.headers, ...t.rows]
+    .map(row => row.map(csvEsc).join(','))
+    .join('\n');
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })),
+    download: csvData.filename.replace(/\.csv$/i, '_modified.csv'),
+  });
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+// ────────────────────────────────────────────────────────────
+// Restart
+// ────────────────────────────────────────────────────────────
+restartBtn.addEventListener('click', () => {
+  csvData = null; rules = []; ruleCounter = 0;
+  rulesList.innerHTML = '';
+  fileInput.value = '';
+  updateEmptyState();
+  showPanel('panel-upload');
+});
+
+// ────────────────────────────────────────────────────────────
+// Utils
+// ────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function csvEsc(v) {
+  const s = String(v ?? '');
+  return (s.includes(',') || s.includes('"') || s.includes('\n'))
+    ? '"' + s.replace(/"/g, '""') + '"'
+    : s;
+}
+</script>
