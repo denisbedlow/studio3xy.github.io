@@ -1,0 +1,801 @@
+---
+// src/components/EdlConverter.astro
+// Client-side EDL (CMX3600) parser and converter.
+// No props / no server logic needed.
+---
+
+<div class="edl" id="edl-root">
+
+  <!-- ══════════ UPLOAD PANEL ══════════ -->
+  <div class="edl-panel" id="panel-upload">
+    <label class="edl-dropzone" id="edl-dropzone">
+      <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+      <span class="edl-drop-primary">Drop your EDL file here</span>
+      <span class="edl-drop-hint">or click to browse &mdash; .edl (CMX3600)</span>
+      <input type="file" accept=".edl,.txt" id="edl-file-input" />
+    </label>
+  </div>
+
+  <!-- ══════════ OPTIONS PANEL ══════════ -->
+  <div class="edl-panel" id="panel-options" style="display:none">
+    <div class="edl-file-badge" id="edl-file-badge"></div>
+
+    <div class="edl-section">
+      <h3 class="edl-section-title">Export Format</h3>
+      <div class="edl-radio-group" id="edl-format-group">
+        <label class="edl-radio"><input type="radio" name="edl-format" value="csv" checked /> CSV</label>
+        <label class="edl-radio"><input type="radio" name="edl-format" value="tsv" /> TSV</label>
+        <label class="edl-radio"><input type="radio" name="edl-format" value="json" /> JSON</label>
+        <label class="edl-radio"><input type="radio" name="edl-format" value="edl" /> EDL (clean)</label>
+      </div>
+    </div>
+
+    <div class="edl-section">
+      <h3 class="edl-section-title">Columns</h3>
+      <div class="edl-checkbox-group" id="edl-columns-group">
+        <label class="edl-checkbox"><input type="checkbox" value="event" checked /> Event #</label>
+        <label class="edl-checkbox"><input type="checkbox" value="reel" checked /> Reel</label>
+        <label class="edl-checkbox"><input type="checkbox" value="track" checked /> Track</label>
+        <label class="edl-checkbox"><input type="checkbox" value="editType" checked /> Edit Type</label>
+        <label class="edl-checkbox"><input type="checkbox" value="srcIn" checked /> Source In</label>
+        <label class="edl-checkbox"><input type="checkbox" value="srcOut" checked /> Source Out</label>
+        <label class="edl-checkbox"><input type="checkbox" value="recIn" checked /> Record In</label>
+        <label class="edl-checkbox"><input type="checkbox" value="recOut" checked /> Record Out</label>
+        <label class="edl-checkbox"><input type="checkbox" value="clipName" checked /> Clip Name</label>
+        <label class="edl-checkbox"><input type="checkbox" value="sourceFile" checked /> Source File</label>
+        <label class="edl-checkbox"><input type="checkbox" value="comment" checked /> Comments</label>
+      </div>
+    </div>
+
+    <div class="edl-section">
+      <h3 class="edl-section-title">Timecode</h3>
+      <div class="edl-row">
+        <label class="edl-select-label">
+          Format
+          <select id="edl-tc-format">
+            <option value="smpte">SMPTE (HH:MM:SS:FF)</option>
+            <option value="ms">Milliseconds</option>
+            <option value="frames">Total Frames</option>
+            <option value="seconds">Seconds</option>
+          </select>
+        </label>
+        <label class="edl-select-label">
+          Framerate
+          <select id="edl-framerate">
+            <option value="23.976">23.976 fps</option>
+            <option value="24">24 fps</option>
+            <option value="25" selected>25 fps</option>
+            <option value="29.97">29.97 fps (Drop Frame)</option>
+            <option value="30">30 fps</option>
+            <option value="48">48 fps</option>
+            <option value="50">50 fps</option>
+            <option value="59.94">59.94 fps (Drop Frame)</option>
+            <option value="60">60 fps</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <div class="edl-section">
+      <h3 class="edl-section-title">Options</h3>
+      <div class="edl-checkbox-group">
+        <label class="edl-checkbox"><input type="checkbox" id="edl-opt-dedup" /> Remove duplicate events</label>
+        <label class="edl-checkbox"><input type="checkbox" id="edl-opt-filter-black" /> Filter out BLACK/BL edits</label>
+        <label class="edl-checkbox"><input type="checkbox" id="edl-opt-sort" /> Sort by record timecode</label>
+      </div>
+    </div>
+
+    <div class="edl-section">
+      <h3 class="edl-section-title">Timecode Offset</h3>
+      <div class="edl-row">
+        <label class="edl-select-label">
+          Offset (frames)
+          <input type="number" id="edl-offset" value="0" class="edl-input" />
+        </label>
+        <label class="edl-select-label">
+          Apply to
+          <select id="edl-offset-target">
+            <option value="both">Source &amp; Record</option>
+            <option value="source">Source only</option>
+            <option value="record">Record only</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <div class="edl-footer">
+      <button class="edl-btn edl-btn--ghost" id="edl-restart-btn">&circlearrowleft; Start Over</button>
+      <button class="edl-btn edl-btn--primary" id="edl-preview-btn">Preview &rarr;</button>
+    </div>
+  </div>
+
+  <!-- ══════════ PREVIEW PANEL ══════════ -->
+  <div class="edl-panel" id="panel-preview" style="display:none">
+    <div class="edl-preview-header">
+      <p class="edl-preview-meta" id="edl-preview-meta"></p>
+      <div class="edl-preview-actions">
+        <button class="edl-btn edl-btn--ghost edl-btn--sm" id="edl-back-btn">&larr; Back</button>
+        <button class="edl-btn edl-btn--primary edl-btn--sm" id="edl-download-btn">&darr; Download</button>
+      </div>
+    </div>
+    <div class="edl-table-wrap" id="edl-table-wrap"></div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SCRIPT
+════════════════════════════════════════════════ -->
+<script>
+// ─── Types ───
+interface EdlEvent {
+  event: string;
+  reel: string;
+  track: string;
+  editType: string;
+  srcIn: string;
+  srcOut: string;
+  recIn: string;
+  recOut: string;
+  clipName: string;
+  sourceFile: string;
+  comment: string;
+}
+
+type TcFormat = 'smpte' | 'ms' | 'frames' | 'seconds';
+
+const COLUMN_LABELS: Record<string, string> = {
+  event: 'Event #',
+  reel: 'Reel',
+  track: 'Track',
+  editType: 'Edit Type',
+  srcIn: 'Source In',
+  srcOut: 'Source Out',
+  recIn: 'Record In',
+  recOut: 'Record Out',
+  clipName: 'Clip Name',
+  sourceFile: 'Source File',
+  comment: 'Comments',
+};
+
+// ─── DOM refs ───
+const root = document.getElementById('edl-root')!;
+const panelUpload = document.getElementById('panel-upload')!;
+const panelOptions = document.getElementById('panel-options')!;
+const panelPreview = document.getElementById('panel-preview')!;
+
+const dropzone = document.getElementById('edl-dropzone')!;
+const fileInput = document.getElementById('edl-file-input') as HTMLInputElement;
+const fileBadge = document.getElementById('edl-file-badge')!;
+
+const previewMeta = document.getElementById('edl-preview-meta')!;
+const tableWrap = document.getElementById('edl-table-wrap')!;
+
+// ─── State ───
+let parsedEvents: EdlEvent[] = [];
+let edlTitle = '';
+let fileName = '';
+
+// ─── Timecode helpers ───
+function tcToFrames(tc: string, fps: number): number {
+  const parts = tc.split(/[:;]/).map(Number);
+  if (parts.length !== 4) return 0;
+  const [h, m, s, f] = parts;
+  return Math.round(h * 3600 * fps + m * 60 * fps + s * fps + f);
+}
+
+function framesToSmpte(totalFrames: number, fps: number): string {
+  const f = totalFrames % Math.round(fps);
+  let remaining = Math.floor(totalFrames / fps);
+  const s = remaining % 60;
+  remaining = Math.floor(remaining / 60);
+  const m = remaining % 60;
+  const h = Math.floor(remaining / 60);
+  const sep = (fps === 29.97 || fps === 59.94) ? ';' : ':';
+  return [
+    String(h).padStart(2, '0'),
+    String(m).padStart(2, '0'),
+    String(s).padStart(2, '0'),
+    String(Math.round(f)).padStart(2, '0'),
+  ].join(sep);
+}
+
+function framesToMs(totalFrames: number, fps: number): string {
+  return (totalFrames / fps * 1000).toFixed(0);
+}
+
+function framesToSeconds(totalFrames: number, fps: number): string {
+  return (totalFrames / fps).toFixed(3);
+}
+
+function convertTc(tc: string, srcFps: number, format: TcFormat, tgtFps: number, offsetFrames: number): string {
+  const frames = tcToFrames(tc, srcFps) + offsetFrames;
+  switch (format) {
+    case 'smpte': return framesToSmpte(frames, tgtFps);
+    case 'ms': return framesToMs(frames, tgtFps);
+    case 'frames': return String(frames);
+    case 'seconds': return framesToSeconds(frames, tgtFps);
+  }
+}
+
+// ─── EDL Parser (CMX3600) ───
+function parseEdl(text: string): { title: string; events: EdlEvent[] } {
+  const lines = text.split(/\r?\n/);
+  let title = '';
+  const events: EdlEvent[] = [];
+
+  // Standard CMX3600 event line regex
+  const eventRegex = /^(\d{3,6})\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S*)\s+(\d{2}:\d{2}:\d{2}[;:]\d{2})\s+(\d{2}:\d{2}:\d{2}[;:]\d{2})\s+(\d{2}:\d{2}:\d{2}[;:]\d{2})\s+(\d{2}:\d{2}:\d{2}[;:]\d{2})/;
+
+  let currentEvent: EdlEvent | null = null;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+
+    // Title line
+    if (line.startsWith('TITLE:')) {
+      title = line.replace('TITLE:', '').trim();
+      continue;
+    }
+
+    // Skip FCM and blank lines
+    if (!line || line.startsWith('FCM:') || line.startsWith('>>>')) continue;
+
+    // Try event line match
+    const match = line.match(eventRegex);
+    if (match) {
+      // Save previous event
+      if (currentEvent) events.push(currentEvent);
+
+      currentEvent = {
+        event: match[1],
+        reel: match[2],
+        track: match[3],
+        editType: match[4],
+        srcIn: match[6],
+        srcOut: match[7],
+        recIn: match[8],
+        recOut: match[9],
+        clipName: '',
+        sourceFile: '',
+        comment: '',
+      };
+      continue;
+    }
+
+    // Comment / metadata lines following an event
+    if (currentEvent) {
+      if (line.startsWith('* FROM CLIP NAME:')) {
+        currentEvent.clipName = line.replace('* FROM CLIP NAME:', '').trim();
+      } else if (line.startsWith('* SOURCE FILE:')) {
+        currentEvent.sourceFile = line.replace('* SOURCE FILE:', '').trim();
+      } else if (line.startsWith('*') || line.startsWith('|')) {
+        const commentText = line.replace(/^[*|]\s*/, '').trim();
+        if (commentText) {
+          currentEvent.comment = currentEvent.comment
+            ? currentEvent.comment + ' | ' + commentText
+            : commentText;
+        }
+      }
+    }
+  }
+
+  // Push last event
+  if (currentEvent) events.push(currentEvent);
+
+  return { title, events };
+}
+
+// ─── Get user options ───
+function getSelectedColumns(): string[] {
+  const checks = document.querySelectorAll('#edl-columns-group input[type="checkbox"]:checked');
+  return Array.from(checks).map(c => (c as HTMLInputElement).value);
+}
+
+function getFormat(): string {
+  const radio = document.querySelector('input[name="edl-format"]:checked') as HTMLInputElement;
+  return radio?.value || 'csv';
+}
+
+function getFramerate(): number {
+  return parseFloat((document.getElementById('edl-framerate') as HTMLSelectElement).value);
+}
+
+function getTcFormat(): TcFormat {
+  return (document.getElementById('edl-tc-format') as HTMLSelectElement).value as TcFormat;
+}
+
+function getOffset(): { frames: number; target: string } {
+  return {
+    frames: parseInt((document.getElementById('edl-offset') as HTMLInputElement).value) || 0,
+    target: (document.getElementById('edl-offset-target') as HTMLSelectElement).value,
+  };
+}
+
+// ─── Process events with user options ───
+function processEvents(): EdlEvent[] {
+  let events = [...parsedEvents];
+  const fps = getFramerate();
+  const tcFormat = getTcFormat();
+  const offset = getOffset();
+
+  // Filter BLACK
+  if ((document.getElementById('edl-opt-filter-black') as HTMLInputElement).checked) {
+    events = events.filter(e => !/^(BL|BLACK)$/i.test(e.reel));
+  }
+
+  // Deduplicate
+  if ((document.getElementById('edl-opt-dedup') as HTMLInputElement).checked) {
+    const seen = new Set<string>();
+    events = events.filter(e => {
+      const key = `${e.reel}|${e.srcIn}|${e.srcOut}|${e.recIn}|${e.recOut}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  // Sort by record TC
+  if ((document.getElementById('edl-opt-sort') as HTMLInputElement).checked) {
+    events.sort((a, b) => tcToFrames(a.recIn, fps) - tcToFrames(b.recIn, fps));
+  }
+
+  // Apply offset & TC format conversion
+  const tcFields = ['srcIn', 'srcOut', 'recIn', 'recOut'] as const;
+  const srcFields = ['srcIn', 'srcOut'] as const;
+  const recFields = ['recIn', 'recOut'] as const;
+
+  if (offset.frames !== 0 || tcFormat !== 'smpte') {
+    events = events.map(e => {
+      const copy = { ...e };
+      for (const field of tcFields) {
+        let off = 0;
+        if (offset.frames !== 0) {
+          if (offset.target === 'both') off = offset.frames;
+          else if (offset.target === 'source' && (srcFields as readonly string[]).includes(field)) off = offset.frames;
+          else if (offset.target === 'record' && (recFields as readonly string[]).includes(field)) off = offset.frames;
+        }
+        copy[field] = convertTc(e[field], fps, tcFormat, fps, off);
+      }
+      return copy;
+    });
+  }
+
+  // Re-number events
+  events = events.map((e, i) => ({ ...e, event: String(i + 1).padStart(3, '0') }));
+
+  return events;
+}
+
+// ─── Export functions ───
+function escCsv(val: string, sep: string): string {
+  if (val.includes(sep) || val.includes('"') || val.includes('\n')) {
+    return '"' + val.replace(/"/g, '""') + '"';
+  }
+  return val;
+}
+
+function toCsv(events: EdlEvent[], cols: string[], sep: string): string {
+  const header = cols.map(c => COLUMN_LABELS[c] || c).join(sep);
+  const rows = events.map(e => cols.map(c => escCsv((e as Record<string, string>)[c] || '', sep)).join(sep));
+  return [header, ...rows].join('\n');
+}
+
+function toJson(events: EdlEvent[], cols: string[]): string {
+  const filtered = events.map(e => {
+    const obj: Record<string, string> = {};
+    for (const c of cols) obj[COLUMN_LABELS[c] || c] = (e as Record<string, string>)[c] || '';
+    return obj;
+  });
+  return JSON.stringify(filtered, null, 2);
+}
+
+function toEdl(events: EdlEvent[]): string {
+  const lines: string[] = [];
+  lines.push(`TITLE: ${edlTitle || 'Untitled'}`);
+  lines.push('FCM: NON-DROP FRAME');
+  lines.push('');
+
+  for (const e of events) {
+    lines.push(`${e.event}  ${e.reel}  ${e.track}  ${e.editType}       ${e.srcIn} ${e.srcOut} ${e.recIn} ${e.recOut}`);
+    if (e.clipName) lines.push(`* FROM CLIP NAME: ${e.clipName}`);
+    if (e.sourceFile) lines.push(`* SOURCE FILE: ${e.sourceFile}`);
+    if (e.comment) {
+      for (const part of e.comment.split(' | ')) {
+        lines.push(`* ${part}`);
+      }
+    }
+    lines.push('');
+  }
+
+  return lines.join('\n');
+}
+
+function download(content: string, ext: string, mime: string) {
+  const base = fileName.replace(/\.[^.]+$/, '') || 'converted';
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${base}.${ext}`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─── UI Helpers ───
+function showPanel(panel: HTMLElement) {
+  panelUpload.style.display = 'none';
+  panelOptions.style.display = 'none';
+  panelPreview.style.display = 'none';
+  panel.style.display = 'flex';
+}
+
+function renderPreview(events: EdlEvent[], cols: string[]) {
+  previewMeta.textContent = `${events.length} event${events.length !== 1 ? 's' : ''} — ${cols.length} column${cols.length !== 1 ? 's' : ''}`;
+
+  const table = document.createElement('table');
+  table.className = 'edl-table';
+
+  const thead = document.createElement('thead');
+  const headRow = document.createElement('tr');
+  for (const c of cols) {
+    const th = document.createElement('th');
+    th.textContent = COLUMN_LABELS[c] || c;
+    headRow.appendChild(th);
+  }
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  const maxRows = Math.min(events.length, 200);
+  for (let i = 0; i < maxRows; i++) {
+    const tr = document.createElement('tr');
+    for (const c of cols) {
+      const td = document.createElement('td');
+      td.textContent = (events[i] as Record<string, string>)[c] || '';
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+  table.appendChild(tbody);
+
+  tableWrap.innerHTML = '';
+  tableWrap.appendChild(table);
+
+  if (events.length > 200) {
+    const note = document.createElement('p');
+    note.className = 'edl-truncation';
+    note.textContent = `Showing first 200 of ${events.length} events. Download will include all.`;
+    tableWrap.appendChild(note);
+  }
+}
+
+// ─── Event handlers ───
+function handleFile(file: File) {
+  fileName = file.name;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const text = reader.result as string;
+    const result = parseEdl(text);
+    parsedEvents = result.events;
+    edlTitle = result.title;
+
+    if (parsedEvents.length === 0) {
+      fileBadge.innerHTML = `<span class="edl-badge edl-badge--error">No events found in ${file.name}. Is this a valid CMX3600 EDL?</span>`;
+    } else {
+      fileBadge.innerHTML = `<span class="edl-badge">${file.name} &mdash; ${parsedEvents.length} events${edlTitle ? ' &mdash; ' + edlTitle : ''}</span>`;
+    }
+
+    showPanel(panelOptions);
+  };
+  reader.readAsText(file);
+}
+
+// File input
+fileInput.addEventListener('change', () => {
+  if (fileInput.files?.[0]) handleFile(fileInput.files[0]);
+});
+
+// Drag & drop
+dropzone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropzone.classList.add('drag-over');
+});
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+dropzone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropzone.classList.remove('drag-over');
+  const file = (e as DragEvent).dataTransfer?.files[0];
+  if (file) handleFile(file);
+});
+
+// Preview
+document.getElementById('edl-preview-btn')!.addEventListener('click', () => {
+  const cols = getSelectedColumns();
+  if (cols.length === 0) return;
+  const format = getFormat();
+  // For EDL output, show all standard fields
+  const events = processEvents();
+  renderPreview(events, format === 'edl' ? ['event','reel','track','editType','srcIn','srcOut','recIn','recOut','clipName','comment'] : cols);
+  showPanel(panelPreview);
+});
+
+// Back
+document.getElementById('edl-back-btn')!.addEventListener('click', () => showPanel(panelOptions));
+
+// Start over
+document.getElementById('edl-restart-btn')!.addEventListener('click', () => {
+  parsedEvents = [];
+  edlTitle = '';
+  fileName = '';
+  fileInput.value = '';
+  showPanel(panelUpload);
+});
+
+// Download
+document.getElementById('edl-download-btn')!.addEventListener('click', () => {
+  const events = processEvents();
+  const cols = getSelectedColumns();
+  const format = getFormat();
+
+  switch (format) {
+    case 'csv':
+      download(toCsv(events, cols, ','), 'csv', 'text/csv');
+      break;
+    case 'tsv':
+      download(toCsv(events, cols, '\t'), 'tsv', 'text/tab-separated-values');
+      break;
+    case 'json':
+      download(toJson(events, cols), 'json', 'application/json');
+      break;
+    case 'edl':
+      download(toEdl(events), 'edl', 'text/plain');
+      break;
+  }
+});
+
+// Toggle column checkboxes visibility based on format
+document.querySelectorAll('input[name="edl-format"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    const isEdl = getFormat() === 'edl';
+    const colGroup = document.getElementById('edl-columns-group')!;
+    colGroup.style.opacity = isEdl ? '0.4' : '1';
+    colGroup.style.pointerEvents = isEdl ? 'none' : 'auto';
+  });
+});
+</script>
+
+<!-- ═══════════════════════════════════════════════
+     STYLES
+════════════════════════════════════════════════ -->
+<style>
+.edl {
+  font-family: inherit;
+  max-width: 1060px;
+  color: var(--sl-color-text);
+}
+
+/* ── Panels ── */
+.edl-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ── Drop zone ── */
+.edl-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  border: 2px dashed var(--sl-color-gray-4, #4a4a5a);
+  border-radius: 10px;
+  padding: 3.5rem 2rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: center;
+  color: var(--sl-color-gray-2, #aaa);
+}
+.edl-dropzone:hover,
+.edl-dropzone.drag-over {
+  border-color: var(--sl-color-accent, #3498db);
+  background: color-mix(in srgb, var(--sl-color-accent, #3498db) 7%, transparent);
+}
+.edl-dropzone input[type="file"] {
+  position: absolute;
+  width: 0; height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.edl-drop-primary {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--sl-color-text);
+}
+.edl-drop-hint {
+  font-size: 0.85rem;
+}
+
+/* ── File badge ── */
+.edl-badge {
+  display: inline-block;
+  padding: 0.4rem 0.85rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  background: color-mix(in srgb, var(--sl-color-accent) 12%, transparent);
+  color: var(--sl-color-accent-high, #1a6fa0);
+  border: 1px solid color-mix(in srgb, var(--sl-color-accent) 30%, transparent);
+}
+.edl-badge--error {
+  background: color-mix(in srgb, #e74c3c 12%, transparent);
+  color: #e74c3c;
+  border-color: color-mix(in srgb, #e74c3c 30%, transparent);
+}
+
+/* ── Sections ── */
+.edl-section {
+  border: 1px solid var(--sl-color-gray-5, #333);
+  border-radius: 8px;
+  padding: 1rem 1.2rem;
+}
+.edl-section-title {
+  margin: 0 0 0.7rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sl-color-gray-2, #aaa);
+}
+
+/* ── Radio / checkbox groups ── */
+.edl-radio-group,
+.edl-checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.2rem;
+}
+.edl-radio,
+.edl-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.88rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* ── Row layout ── */
+.edl-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.edl-select-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--sl-color-gray-2, #aaa);
+  flex: 1;
+  min-width: 160px;
+}
+.edl-select-label select,
+.edl-input {
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--sl-color-gray-5, #333);
+  border-radius: 6px;
+  background: var(--sl-color-bg, #1a1a2e);
+  color: var(--sl-color-text);
+  font-size: 0.88rem;
+}
+
+/* ── Buttons ── */
+.edl-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+.edl-btn {
+  padding: 0.55rem 1.2rem;
+  border-radius: 7px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s, opacity 0.15s;
+}
+.edl-btn--sm {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.82rem;
+}
+.edl-btn--primary {
+  background: var(--sl-color-accent, #3498db);
+  color: #fff;
+}
+.edl-btn--primary:hover {
+  opacity: 0.88;
+}
+.edl-btn--ghost {
+  background: transparent;
+  color: var(--sl-color-gray-2, #aaa);
+  border: 1px solid var(--sl-color-gray-5, #333);
+}
+.edl-btn--ghost:hover {
+  border-color: var(--sl-color-accent);
+  color: var(--sl-color-accent);
+}
+
+/* ── Preview ── */
+.edl-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.edl-preview-meta {
+  font-size: 0.88rem;
+  color: var(--sl-color-gray-2, #aaa);
+  margin: 0;
+}
+.edl-preview-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* ── Table ── */
+.edl-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--sl-color-gray-5, #333);
+  border-radius: 8px;
+}
+.edl-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+.edl-table th {
+  position: sticky;
+  top: 0;
+  background: var(--sl-color-gray-6, #222);
+  padding: 0.5rem 0.7rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--sl-color-gray-2, #aaa);
+  border-bottom: 1px solid var(--sl-color-gray-5, #333);
+}
+.edl-table td {
+  padding: 0.4rem 0.7rem;
+  border-bottom: 1px solid var(--sl-color-gray-6, #222);
+  font-family: ui-monospace, 'SF Mono', 'Cascadia Code', 'Segoe UI Mono', monospace;
+}
+.edl-table tbody tr:hover {
+  background: color-mix(in srgb, var(--sl-color-accent) 5%, transparent);
+}
+.edl-truncation {
+  font-size: 0.82rem;
+  color: var(--sl-color-gray-3, #888);
+  text-align: center;
+  padding: 0.6rem;
+  margin: 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .edl-row { flex-direction: column; }
+  .edl-radio-group,
+  .edl-checkbox-group { flex-direction: column; }
+  .edl-preview-header { flex-direction: column; align-items: flex-start; }
+}
+</style>

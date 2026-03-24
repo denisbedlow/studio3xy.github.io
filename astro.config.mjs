@@ -17,6 +17,7 @@ export default defineConfig({
             { label: 'Overview', link: '/tools/' },
             { label: 'CSV Loc Name Decomposer', link: '/tools/csv-decomposer/' },
             { label: 'CSV Column Splitter', link: '/tools/csv-rule-splitter/' },
+            { label: 'EDL Tool & Converter', link: '/tools/edl-converter/' },
           ],
         },
       ],

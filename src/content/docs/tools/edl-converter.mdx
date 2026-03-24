@@ -1,0 +1,21 @@
+---
+title: EDL Tool & Converter
+description: Parse and convert CMX3600 EDL files to CSV, TSV, JSON, or clean EDL. Filter, sort, offset timecode, and customise columns.
+---
+
+import EdlConverter from '../../../components/EdlConverter.astro';
+
+## Overview
+
+Upload a **CMX3600 EDL** file and convert it to spreadsheet-friendly formats or a cleaned-up EDL. All processing happens in your browser — no files are uploaded to any server.
+
+| Feature | Details |
+|---|---|
+| **Input** | CMX3600 EDL (.edl) |
+| **Output** | CSV, TSV, JSON, cleaned EDL |
+| **Timecode** | SMPTE, milliseconds, total frames, seconds — with framerate conversion |
+| **Processing** | Remove duplicates, filter BLACK edits, sort by record TC, offset timecode |
+
+Drop your file below to get started.
+
+<EdlConverter />
