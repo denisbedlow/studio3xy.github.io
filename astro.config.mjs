@@ -14,8 +14,7 @@ export default defineConfig({
         {
           label: 'Tools',
           items: [
-            { label: 'Overview', link: '/tools/' },
-            { label: 'CSV Loc Name Decomposer', link: '/tools/csv-decomposer/' },
+{ label: 'CSV Loc Name Decomposer', link: '/tools/csv-decomposer/' },
             { label: 'CSV Column Splitter', link: '/tools/csv-rule-splitter/' },
             { label: 'EDL Tool & Converter', link: '/tools/edl-converter/' },
             { label: 'CSV Add _MST to VFX ID', link: '/tools/csv-mst-appender/' },
