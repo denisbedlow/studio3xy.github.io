@@ -1,0 +1,12 @@
+---
+title: CSV Add _MST to VFX ID
+description: Upload a CSV containing a "Subtitle" column and automatically download a modified version with "_MST" appended to every value in that column.
+---
+
+import CsvMstAppender from '../../../components/CsvMstAppender.astro';
+
+## Overview
+
+Upload any CSV that contains a **Subtitle** column. The tool appends `_MST` to every value in that column and immediately downloads the result as `<original-filename>_modified.csv`. No data leaves your browser.
+
+<CsvMstAppender />
