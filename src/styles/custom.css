@@ -43,11 +43,14 @@ site-search button > kbd {
     white-space: nowrap !important;
     min-width: 0;
   }
-  .sidebar-content a,
-  .sidebar-content summary {
+  .sidebar-content a {
     overflow: hidden;
     text-overflow: ellipsis;
     display: block;
+  }
+  .sidebar-content summary {
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 

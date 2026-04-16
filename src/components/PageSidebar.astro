@@ -46,25 +46,54 @@ import TableOfContents from 'virtual:starlight/components/TableOfContents';
   )
 }
 
-<!-- Restores state before first paint to avoid flash -->
+<!--
+  This script is inline (no bundling) so it runs synchronously during HTML
+  parsing — before the browser paints a single pixel. It sets CSS custom
+  properties on <html> so the CSS rules below immediately read the saved
+  values, avoiding any flash or snap on initial load AND on every navigation.
+-->
 <script is:inline>
   (function () {
-    if (localStorage.getItem('sl-toc-collapsed') === '1') {
-      document.documentElement.classList.add('toc-collapsed');
-    }
-    const nw = localStorage.getItem('sl-nav-width');
-    if (nw) document.documentElement.style.setProperty('--sl-sidebar-width', nw + 'px');
+    var root = document.documentElement;
 
-    // Prevent Astro from replacing the sidebar DOM during page transitions.
-    // Without this, the sidebar is swapped for one frame with unstyled content
-    // before custom.css re-applies, causing a brief text-wrap flash.
+    // Restore collapsed state
+    if (localStorage.getItem('sl-toc-collapsed') === '1') {
+      root.classList.add('toc-collapsed');
+    }
+
+    // Restore left nav width
+    var nw = localStorage.getItem('sl-nav-width');
+    if (nw) root.style.setProperty('--sl-sidebar-width', nw + 'px');
+
+    // Restore right sidebar width via CSS custom property.
+    // The CSS rules below read --toc-width, so this takes effect with zero lag.
+    var tw = localStorage.getItem('sl-toc-width');
+    if (tw && localStorage.getItem('sl-toc-collapsed') !== '1') {
+      root.style.setProperty('--toc-width', tw + 'px');
+    }
+
     document.addEventListener('astro:before-swap', function (ev) {
       // Persist left sidebar to prevent text-wrap flash during page transitions.
-      const oldNav = document.querySelector('.sidebar');
-      const newNav = ev.newDocument.querySelector('.sidebar');
+      var oldNav = document.querySelector('.sidebar');
+      var newNav = ev.newDocument.querySelector('.sidebar');
       if (oldNav && newNav) {
         oldNav.dataset.astroTransitionPersist = 'sl-left-sidebar';
         newNav.dataset.astroTransitionPersist = 'sl-left-sidebar';
+      }
+
+      // Stamp the saved right sidebar width onto the INCOMING document's <html>
+      // before Astro swaps it in. The CSS rules reading var(--toc-width) on the
+      // new page will immediately use this value — no paint at default width.
+      var tw2 = localStorage.getItem('sl-toc-width');
+      if (tw2 && localStorage.getItem('sl-toc-collapsed') !== '1') {
+        ev.newDocument.documentElement.style.setProperty('--toc-width', tw2 + 'px');
+      }
+
+      // Also carry over left nav width and collapsed state.
+      var nw2 = localStorage.getItem('sl-nav-width');
+      if (nw2) ev.newDocument.documentElement.style.setProperty('--sl-sidebar-width', nw2 + 'px');
+      if (localStorage.getItem('sl-toc-collapsed') === '1') {
+        ev.newDocument.documentElement.classList.add('toc-collapsed');
       }
     });
   })();
@@ -79,57 +108,69 @@ import TableOfContents from 'virtual:starlight/components/TableOfContents';
   function setup() {
     const toggle = document.getElementById('toc-toggle') as HTMLButtonElement | null;
     const edge   = document.getElementById('toc-edge') as HTMLElement | null;
-    const container = document.querySelector<HTMLElement>('.right-sidebar-container');
-    const sidebar   = document.querySelector<HTMLElement>('.right-sidebar');
-    const mainPane  = document.querySelector<HTMLElement>('.main-pane');
+    const mainPane = document.querySelector<HTMLElement>('.main-pane');
 
-    if (!toggle || !edge || !container || !sidebar || !mainPane) return;
-
-    // ── Restore saved width ──────────────────────────────────────────────────
-    const savedWidth = localStorage.getItem(KEY_WIDTH);
-    if (savedWidth && !document.documentElement.classList.contains('toc-collapsed')) {
-      applyWidth(container, sidebar, mainPane, parseInt(savedWidth));
-    }
+    if (!toggle || !edge) return;
 
     // ── Collapse / expand ────────────────────────────────────────────────────
     toggle.addEventListener('click', (e) => {
       e.stopPropagation();
+
+      // Enable transition only for this user-initiated toggle, then remove it
+      // so page navigations can never trigger the animation.
+      const EASE = 'width 0.22s cubic-bezier(0.4, 0, 0.2, 1)';
+      const container = document.querySelector<HTMLElement>('.right-sidebar-container');
+      const sidebar   = document.querySelector<HTMLElement>('.right-sidebar');
+      if (container) container.style.transition = EASE;
+      if (sidebar)   sidebar.style.transition   = EASE;
+      setTimeout(() => {
+        if (container) container.style.transition = '';
+        if (sidebar)   sidebar.style.transition   = '';
+      }, 250);
+
       const isNowCollapsed = document.documentElement.classList.toggle('toc-collapsed');
       localStorage.setItem(KEY_COLLAPSED, isNowCollapsed ? '1' : '0');
 
       if (!isNowCollapsed) {
         const w = localStorage.getItem(KEY_WIDTH);
-        if (w) applyWidth(container, sidebar, mainPane, parseInt(w));
+        if (w) applyWidth(parseInt(w));
       }
     });
 
     // ── Drag-to-resize ───────────────────────────────────────────────────────
     edge.addEventListener('mousedown', (e: MouseEvent) => {
-      // Only drag on the edge itself, not the toggle button
       if ((e.target as HTMLElement).closest('#toc-toggle')) return;
       if (document.documentElement.classList.contains('toc-collapsed')) return;
       e.preventDefault();
 
+      const container = document.querySelector<HTMLElement>('.right-sidebar-container');
+      if (!container) return;
+
       const startX     = e.clientX;
       const startWidth = container.getBoundingClientRect().width;
 
-      container.style.transition = 'none';
-      sidebar.style.transition   = 'none';
+      // No transition during drag
+      const sidebar = document.querySelector<HTMLElement>('.right-sidebar');
+      if (container) container.style.transition = 'none';
+      if (sidebar)   sidebar.style.transition   = 'none';
       document.body.classList.add('toc-resizing');
 
       function onMove(e: MouseEvent) {
-        const delta    = startX - e.clientX;          // drag left = wider
+        const delta    = startX - e.clientX;
         const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth + delta));
-        applyWidth(container!, sidebar!, mainPane!, newWidth);
+        applyWidth(newWidth);
       }
 
       function onUp() {
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
-        container!.style.transition = '';
-        sidebar!.style.transition   = '';
+        if (container) container.style.transition = '';
+        if (sidebar)   sidebar.style.transition   = '';
         document.body.classList.remove('toc-resizing');
-        localStorage.setItem(KEY_WIDTH, String(Math.round(container!.getBoundingClientRect().width)));
+        // Save the current width from the CSS variable
+        const cur = getComputedStyle(document.documentElement).getPropertyValue('--toc-width').trim();
+        const px = parseInt(cur);
+        if (!isNaN(px)) localStorage.setItem(KEY_WIDTH, String(px));
       }
 
       document.addEventListener('mousemove', onMove);
@@ -137,16 +178,10 @@ import TableOfContents from 'virtual:starlight/components/TableOfContents';
     });
   }
 
-  function applyWidth(
-    container: HTMLElement,
-    sidebar: HTMLElement,
-    mainPane: HTMLElement,
-    width: number,
-  ) {
-    const w = width + 'px';
-    container.style.width = w;
-    sidebar.style.width   = w;
-    mainPane.style.width  = `calc(100% - ${w})`;
+  // Width is driven entirely by the --toc-width CSS custom property on <html>.
+  // This means the is:inline script can set it synchronously before first paint.
+  function applyWidth(width: number) {
+    document.documentElement.style.setProperty('--toc-width', width + 'px');
   }
 
   // ── Left nav resize ─────────────────────────────────────────────────────────
@@ -211,9 +246,19 @@ import TableOfContents from 'virtual:starlight/components/TableOfContents';
 <!-- ── Global: overrides on TwoColumnContent elements ── -->
 <style is:global>
   @media (min-width: 72rem) {
+    /*
+     * The right sidebar width is driven entirely by --toc-width on <html>.
+     * The is:inline script sets this synchronously before first paint, so the
+     * browser never renders at the default CSS width — no snap, no flash.
+     * No CSS transition here: it is added transiently in JS only for toggle clicks.
+     */
     .right-sidebar-container,
     .right-sidebar {
-      transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+      width: var(--toc-width) !important;
+    }
+
+    html[data-has-toc]:not(.toc-collapsed) .main-pane {
+      width: calc(100% - var(--toc-width)) !important;
     }
 
     /* Collapsed */
@@ -227,13 +272,9 @@ import TableOfContents from 'virtual:starlight/components/TableOfContents';
       margin-inline: auto !important;
     }
 
-    /* Disable transitions during drag */
-    body.toc-resizing .right-sidebar-container,
-    body.toc-resizing .right-sidebar { transition: none !important; }
     body.toc-resizing,
     body.nav-resizing { user-select: none; cursor: col-resize; }
   }
-
 </style>
 
 <style>
