@@ -1,0 +1,398 @@
+---
+import MobileTableOfContents from 'virtual:starlight/components/MobileTableOfContents';
+import TableOfContents from 'virtual:starlight/components/TableOfContents';
+---
+
+{
+  Astro.locals.starlightRoute.toc && (
+    <>
+      <div class="lg:sl-hidden">
+        <MobileTableOfContents />
+      </div>
+      <div class="toc-wrapper sl-hidden lg:sl-block">
+        <!-- Drag + toggle zone: sits on the left border of the sidebar -->
+        <div id="toc-edge" class="toc-edge">
+          <button
+            id="toc-toggle"
+            class="toc-toggle"
+            aria-label="Toggle table of contents"
+            title="Toggle table of contents"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="toc-chevron"
+              aria-hidden="true"
+            >
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+        </div>
+
+        <div class="right-sidebar-panel">
+          <div class="toc-content sl-container">
+            <TableOfContents />
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
+
+<!-- Restores state before first paint to avoid flash -->
+<script is:inline>
+  (function () {
+    if (localStorage.getItem('sl-toc-collapsed') === '1') {
+      document.documentElement.classList.add('toc-collapsed');
+    }
+    const nw = localStorage.getItem('sl-nav-width');
+    if (nw) document.documentElement.style.setProperty('--sl-sidebar-width', nw + 'px');
+
+    // Prevent Astro from replacing the sidebar DOM during page transitions.
+    // Without this, the sidebar is swapped for one frame with unstyled content
+    // before custom.css re-applies, causing a brief text-wrap flash.
+    document.addEventListener('astro:before-swap', function (ev) {
+      // Persist left sidebar to prevent text-wrap flash during page transitions.
+      const oldNav = document.querySelector('.sidebar');
+      const newNav = ev.newDocument.querySelector('.sidebar');
+      if (oldNav && newNav) {
+        oldNav.dataset.astroTransitionPersist = 'sl-left-sidebar';
+        newNav.dataset.astroTransitionPersist = 'sl-left-sidebar';
+      }
+    });
+  })();
+</script>
+
+<script>
+  const KEY_COLLAPSED = 'sl-toc-collapsed';
+  const KEY_WIDTH = 'sl-toc-width';
+  const MIN_WIDTH = 120;
+  const MAX_WIDTH = 540;
+
+  function setup() {
+    const toggle = document.getElementById('toc-toggle') as HTMLButtonElement | null;
+    const edge   = document.getElementById('toc-edge') as HTMLElement | null;
+    const container = document.querySelector<HTMLElement>('.right-sidebar-container');
+    const sidebar   = document.querySelector<HTMLElement>('.right-sidebar');
+    const mainPane  = document.querySelector<HTMLElement>('.main-pane');
+
+    if (!toggle || !edge || !container || !sidebar || !mainPane) return;
+
+    // ── Restore saved width ──────────────────────────────────────────────────
+    const savedWidth = localStorage.getItem(KEY_WIDTH);
+    if (savedWidth && !document.documentElement.classList.contains('toc-collapsed')) {
+      applyWidth(container, sidebar, mainPane, parseInt(savedWidth));
+    }
+
+    // ── Collapse / expand ────────────────────────────────────────────────────
+    toggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isNowCollapsed = document.documentElement.classList.toggle('toc-collapsed');
+      localStorage.setItem(KEY_COLLAPSED, isNowCollapsed ? '1' : '0');
+
+      if (!isNowCollapsed) {
+        const w = localStorage.getItem(KEY_WIDTH);
+        if (w) applyWidth(container, sidebar, mainPane, parseInt(w));
+      }
+    });
+
+    // ── Drag-to-resize ───────────────────────────────────────────────────────
+    edge.addEventListener('mousedown', (e: MouseEvent) => {
+      // Only drag on the edge itself, not the toggle button
+      if ((e.target as HTMLElement).closest('#toc-toggle')) return;
+      if (document.documentElement.classList.contains('toc-collapsed')) return;
+      e.preventDefault();
+
+      const startX     = e.clientX;
+      const startWidth = container.getBoundingClientRect().width;
+
+      container.style.transition = 'none';
+      sidebar.style.transition   = 'none';
+      document.body.classList.add('toc-resizing');
+
+      function onMove(e: MouseEvent) {
+        const delta    = startX - e.clientX;          // drag left = wider
+        const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth + delta));
+        applyWidth(container!, sidebar!, mainPane!, newWidth);
+      }
+
+      function onUp() {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        container!.style.transition = '';
+        sidebar!.style.transition   = '';
+        document.body.classList.remove('toc-resizing');
+        localStorage.setItem(KEY_WIDTH, String(Math.round(container!.getBoundingClientRect().width)));
+      }
+
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  }
+
+  function applyWidth(
+    container: HTMLElement,
+    sidebar: HTMLElement,
+    mainPane: HTMLElement,
+    width: number,
+  ) {
+    const w = width + 'px';
+    container.style.width = w;
+    sidebar.style.width   = w;
+    mainPane.style.width  = `calc(100% - ${w})`;
+  }
+
+  // ── Left nav resize ─────────────────────────────────────────────────────────
+  const KEY_NAV_WIDTH = 'sl-nav-width';
+  const NAV_MIN = 160;
+  const NAV_MAX = 400;
+
+  function setupNavResize() {
+    if (window.innerWidth < 800) return;
+    const sidebarPane = document.querySelector<HTMLElement>('.sidebar-pane');
+    if (!sidebarPane || document.getElementById('nav-resize-handle')) return;
+
+    const handle = document.createElement('div');
+    handle.id = 'nav-resize-handle';
+    Object.assign(handle.style, {
+      position: 'absolute', right: '-6px', top: '0', bottom: '0',
+      width: '12px', cursor: 'col-resize', zIndex: '30',
+    });
+
+    const line = document.createElement('div');
+    Object.assign(line.style, {
+      position: 'absolute', left: '5px', top: '0', bottom: '0',
+      width: '2px', borderRadius: '1px', background: 'transparent',
+      transition: 'background 0.15s', pointerEvents: 'none',
+    });
+    handle.appendChild(line);
+
+    handle.addEventListener('mouseenter', () => { line.style.background = 'var(--sl-color-accent)'; });
+    handle.addEventListener('mouseleave', () => {
+      if (!document.body.classList.contains('nav-resizing')) line.style.background = 'transparent';
+    });
+
+    handle.addEventListener('mousedown', (e: MouseEvent) => {
+      e.preventDefault();
+      const startX = e.clientX;
+      const startW = sidebarPane.getBoundingClientRect().width;
+      document.body.classList.add('nav-resizing');
+
+      function onMove(e: MouseEvent) {
+        const w = Math.min(NAV_MAX, Math.max(NAV_MIN, startW + (e.clientX - startX)));
+        document.documentElement.style.setProperty('--sl-sidebar-width', w + 'px');
+      }
+      function onUp() {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        document.body.classList.remove('nav-resizing');
+        line.style.background = handle.matches(':hover') ? 'var(--sl-color-accent)' : 'transparent';
+        localStorage.setItem(KEY_NAV_WIDTH, String(Math.round(sidebarPane!.getBoundingClientRect().width)));
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+
+    sidebarPane.appendChild(handle);
+  }
+
+  setup();
+  setupNavResize();
+  document.addEventListener('astro:page-load', () => { setup(); setupNavResize(); });
+</script>
+
+<!-- ── Global: overrides on TwoColumnContent elements ── -->
+<style is:global>
+  @media (min-width: 72rem) {
+    .right-sidebar-container,
+    .right-sidebar {
+      transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Collapsed */
+    html.toc-collapsed .right-sidebar-container { width: 0 !important; }
+    html.toc-collapsed .right-sidebar           { width: 0 !important; overflow: hidden !important; }
+    html.toc-collapsed[data-has-toc] .main-pane { width: 100% !important; }
+
+    /* Center content with proportional margins — wider space = wider margins */
+    .main-pane .sl-container {
+      max-width: min(var(--sl-content-width), 82%) !important;
+      margin-inline: auto !important;
+    }
+
+    /* Disable transitions during drag */
+    body.toc-resizing .right-sidebar-container,
+    body.toc-resizing .right-sidebar { transition: none !important; }
+    body.toc-resizing,
+    body.nav-resizing { user-select: none; cursor: col-resize; }
+  }
+
+</style>
+
+<style>
+  @layer starlight.core {
+    .toc-wrapper {
+      position: relative;
+      height: 100%;
+    }
+
+    /* ── Edge zone: the draggable left border of the sidebar ── */
+    .toc-edge {
+      position: absolute;
+      left: -6px;          /* straddles the border: half in content, half in sidebar */
+      top: 0;
+      bottom: 0;
+      width: 12px;
+      cursor: col-resize;
+      z-index: 30;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding-top: calc(var(--sl-nav-height) + 1.5rem);
+    }
+
+    @media (min-width: 72rem) {
+      .toc-edge { display: flex; }
+    }
+
+    /* The visible 1px drag line */
+    .toc-edge::before {
+      content: '';
+      position: absolute;
+      left: 5px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      border-radius: 1px;
+      background: transparent;
+      transition: background 0.15s;
+      pointer-events: none;
+    }
+
+    .toc-edge:hover::before,
+    :global(body.toc-resizing) .toc-edge::before {
+      background: var(--sl-color-accent);
+    }
+
+    /* ── Toggle button lives on the edge ── */
+    .toc-toggle {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.5rem;
+      height: 1.5rem;
+      border-radius: 50%;
+      border: 1px solid var(--sl-color-hairline);
+      background: var(--sl-color-bg-sidebar);
+      color: var(--sl-color-gray-3);
+      cursor: pointer;
+      padding: 0;
+      flex-shrink: 0;
+      box-shadow: var(--sl-shadow-sm);
+      opacity: 0;
+      transition:
+        opacity 0.15s,
+        background 0.15s,
+        color 0.15s,
+        border-color 0.15s;
+    }
+
+    /* Show the button when hovering the edge zone */
+    .toc-edge:hover .toc-toggle,
+    :global(body.toc-resizing) .toc-toggle {
+      opacity: 1;
+    }
+
+    .toc-toggle:hover {
+      background: var(--sl-color-gray-6);
+      color: var(--sl-color-white);
+      border-color: var(--sl-color-accent);
+    }
+
+    /* When collapsed, the edge is gone — show a persistent tab on the right viewport edge */
+    :global(html.toc-collapsed) .toc-edge {
+      position: fixed;
+      right: 0;
+      left: auto;
+      width: 1.75rem;
+      cursor: default;
+      padding-top: calc(var(--sl-nav-height) + 1.5rem);
+    }
+
+    :global(html.toc-collapsed) .toc-edge::before {
+      display: none;
+    }
+
+    :global(html.toc-collapsed) .toc-toggle {
+      opacity: 1;
+      border-radius: 6px 0 0 6px;  /* flat on the right = flush with viewport edge */
+      border-right: none;
+    }
+
+    /* Chevron direction */
+    .toc-chevron {
+      transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    :global(html.toc-collapsed) .toc-chevron {
+      transform: rotate(180deg);
+    }
+
+    /* ── Panel ── */
+    .right-sidebar-panel {
+      padding: 1rem var(--sl-sidebar-pad-x);
+    }
+
+    .sl-container {
+      width: calc(var(--sl-sidebar-width) - 2 * var(--sl-sidebar-pad-x));
+      transition: opacity 0.18s ease;
+    }
+
+    :global(html.toc-collapsed) .sl-container {
+      opacity: 0;
+    }
+
+    .right-sidebar-panel :global(h2) {
+      color: var(--sl-color-white);
+      font-size: var(--sl-text-h5);
+      font-weight: 600;
+      line-height: var(--sl-line-height-headings);
+      margin-bottom: 0.5rem;
+    }
+
+    .right-sidebar-panel :global(:where(a)) {
+      display: block;
+      font-size: var(--sl-text-xs);
+      text-decoration: none;
+      color: var(--sl-color-gray-3);
+      overflow-wrap: anywhere;
+    }
+
+    .right-sidebar-panel :global(:where(a):hover) {
+      color: var(--sl-color-white);
+    }
+
+    @media (min-width: 72rem) {
+      .sl-container {
+        max-width: calc(
+          (
+              (
+                  100vw - var(--sl-sidebar-width) - 2 * var(--sl-content-pad-x) - 2 *
+                    var(--sl-sidebar-pad-x)
+                ) * 0.25
+            )
+        );
+      }
+    }
+  }
+</style>

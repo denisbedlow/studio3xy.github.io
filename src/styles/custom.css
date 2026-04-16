@@ -10,3 +10,50 @@
   --sl-color-accent: #5aafe8;
   --sl-color-accent-high: #a8d8f5;
 }
+
+/* Search: icon-only button — strip wide input styling and hide label/shortcut */
+site-search button[data-open-modal] {
+  width: auto !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0.375rem !important;
+  color: var(--sl-color-gray-3);
+}
+site-search button[data-open-modal]:hover {
+  color: var(--sl-color-white);
+}
+site-search button > span,
+site-search button > kbd {
+  display: none !important;
+}
+
+/* Left sidebar: no scroll, no text wrap at any state (kept here so it persists through page transitions) */
+@media (min-width: 50rem) {
+  .sidebar-pane {
+    overflow: hidden !important;
+    /* Opt out of Astro view-transition animation so the sidebar never enters a transitional render state */
+    view-transition-name: sl-sidebar;
+  }
+  .sidebar-content {
+    overflow: hidden;
+    flex-wrap: nowrap !important;
+  }
+  .sidebar-content * {
+    white-space: nowrap !important;
+    min-width: 0;
+  }
+  .sidebar-content a,
+  .sidebar-content summary {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+  }
+}
+
+/* Freeze the sidebar across page transitions — no fade/slide animation */
+::view-transition-old(sl-sidebar),
+::view-transition-new(sl-sidebar) {
+  animation: none !important;
+  mix-blend-mode: normal;
+}
