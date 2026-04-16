@@ -7,6 +7,7 @@ export default defineConfig({
     starlight({
       title: 'Studio3xy',
       customCss: ['./src/styles/custom.css'],
+      pagination: false,
       components: {
         Header: './src/components/Header.astro',
         PageSidebar: './src/components/PageSidebar.astro',
