@@ -81,15 +81,6 @@ import TableOfContents from 'virtual:starlight/components/TableOfContents';
         newNav.dataset.astroTransitionPersist = 'sl-left-sidebar';
       }
 
-      // Persist the toc-edge (drag handle + toggle button) so it never flashes
-      // to the wrong position during view transitions.
-      var oldEdge = document.getElementById('toc-edge');
-      var newEdge = ev.newDocument.getElementById('toc-edge');
-      if (oldEdge && newEdge) {
-        oldEdge.dataset.astroTransitionPersist = 'sl-toc-edge';
-        newEdge.dataset.astroTransitionPersist = 'sl-toc-edge';
-      }
-
       // Stamp the saved right sidebar width onto the INCOMING document's <html>
       // before Astro swaps it in. The CSS rules reading var(--toc-width) on the
       // new page will immediately use this value — no paint at default width.
@@ -334,6 +325,7 @@ import TableOfContents from 'virtual:starlight/components/TableOfContents';
 
     /* ── Toggle button lives on the edge ── */
     .toc-toggle {
+      view-transition-name: toc-toggle;
       position: relative;
       z-index: 1;
       display: flex;
