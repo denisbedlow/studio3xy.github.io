@@ -15,10 +15,10 @@
   <div id="pagefind-container"></div>
 </dialog>
 
-<script>
+<script is:inline>
   function setup() {
-    const btn    = document.getElementById('search-open') as HTMLButtonElement | null;
-    const dialog = document.getElementById('search-dialog') as HTMLDialogElement | null;
+    const btn    = document.getElementById('search-open');
+    const dialog = document.getElementById('search-dialog');
     if (!btn || !dialog) return;
 
     btn.addEventListener('click', async () => {
@@ -35,7 +35,7 @@
       }
 
       setTimeout(() => {
-        (dialog.querySelector('input[type="text"]') as HTMLInputElement | null)?.focus();
+        dialog.querySelector('input[type="text"]')?.focus();
       }, 60);
     });
 
