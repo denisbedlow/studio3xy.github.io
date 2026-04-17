@@ -1,0 +1,101 @@
+<!-- Search button + modal dialog powered by Pagefind.
+     Uses <dialog> so the modal lands in the browser's top layer — no stacking
+     context or z-index conflicts with the fixed header or sidebars. -->
+
+<button id="search-open" class="search-btn" aria-label="Search" title="Search">
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" stroke-width="2"
+    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="11" cy="11" r="8"/>
+    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+  </svg>
+</button>
+
+<dialog id="search-dialog" aria-label="Search">
+  <div id="pagefind-container"></div>
+</dialog>
+
+<script>
+  function setup() {
+    const btn    = document.getElementById('search-open') as HTMLButtonElement | null;
+    const dialog = document.getElementById('search-dialog') as HTMLDialogElement | null;
+    if (!btn || !dialog) return;
+
+    btn.addEventListener('click', async () => {
+      dialog.showModal();
+
+      const container = dialog.querySelector('#pagefind-container');
+      if (container && !container.hasChildNodes()) {
+        try {
+          const { PagefindUI } = await import('/pagefind/pagefind-ui.js');
+          new PagefindUI({ element: container, showSubResults: true, resetStyles: false });
+        } catch {
+          container.textContent = 'Search not available in dev mode — run npm run build first.';
+        }
+      }
+
+      setTimeout(() => {
+        (dialog.querySelector('input[type="text"]') as HTMLInputElement | null)?.focus();
+      }, 60);
+    });
+
+    dialog.addEventListener('click', (e) => {
+      const rect = dialog.getBoundingClientRect();
+      if (
+        e.clientX < rect.left || e.clientX > rect.right ||
+        e.clientY < rect.top  || e.clientY > rect.bottom
+      ) dialog.close();
+    });
+  }
+
+  setup();
+  document.addEventListener('astro:page-load', setup);
+</script>
+
+<style>
+  .search-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: none;
+    border-radius: 0.25rem;
+    background: transparent;
+    color: var(--sl-color-gray-3);
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.15s, background 0.15s;
+  }
+  .search-btn:hover {
+    color: var(--sl-color-white);
+    background: var(--sl-color-gray-5);
+  }
+
+  #search-dialog::backdrop { background: var(--sl-color-backdrop-overlay); }
+
+  #search-dialog {
+    margin-top: 10vh;
+    width: min(640px, 90vw);
+    max-height: 80vh;
+    overflow-y: auto;
+    background: var(--sl-color-bg);
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 0.5rem;
+    box-shadow: var(--sl-shadow-md);
+    padding: 1rem;
+    color: var(--sl-color-text);
+  }
+
+  :global(#pagefind-container) {
+    --pagefind-ui-scale:         0.9;
+    --pagefind-ui-primary:       var(--sl-color-accent);
+    --pagefind-ui-text:          var(--sl-color-text);
+    --pagefind-ui-background:    var(--sl-color-bg);
+    --pagefind-ui-border:        var(--sl-color-hairline);
+    --pagefind-ui-tag:           var(--sl-color-bg-inline-code);
+    --pagefind-ui-border-width:  1px;
+    --pagefind-ui-border-radius: 0.25rem;
+    --pagefind-ui-font:          var(--__sl-font);
+  }
+</style>

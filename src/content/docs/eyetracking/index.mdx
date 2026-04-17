@@ -3,19 +3,36 @@ title: Eye Tracking
 description: Real-time eye tracking demos powered by MediaPipe Face Mesh.
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
-
 Explore our eye tracking demos powered by **MediaPipe Face Mesh** — everything runs directly in your browser, no server required.
 
-<CardGrid>
-  <Card title="👁️ Eye Tracking">
-    Real-time gaze tracking overlaid on a cityscape image. Visualise where you look using a live heatmap.
+<div class="card-grid">
+  <div class="card">
+    <strong>👁️ Eye Tracking</strong>
+    <p>Real-time gaze tracking overlaid on a cityscape image. Visualise where you look using a live heatmap.</p>
+    <a href="/eye-tracking.html">Launch →</a>
+  </div>
+  <div class="card">
+    <strong>😑 Blink Counter</strong>
+    <p>Counts your blinks in real time using your webcam. Includes a session timer and blinks-per-minute stats.</p>
+    <a href="/blink-counter.html">Launch →</a>
+  </div>
+</div>
 
-    [Launch →](/eye-tracking.html)
-  </Card>
-  <Card title="😑 Blink Counter">
-    Counts your blinks in real time using your webcam. Includes a session timer and blinks-per-minute stats.
-
-    [Launch →](/blink-counter.html)
-  </Card>
-</CardGrid>
+<style>{`
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+  .card {
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 0.5rem;
+    background: var(--sl-color-bg-sidebar);
+  }
+  .card strong { display: block; margin-bottom: 0.5rem; font-size: var(--sl-text-h5); }
+  .card p { color: var(--sl-color-gray-2); margin: 0 0 0.75rem; font-size: var(--sl-text-sm); }
+  .card a { color: var(--sl-color-text-accent); text-decoration: none; font-weight: 600; font-size: var(--sl-text-sm); }
+  .card a:hover { color: var(--sl-color-accent-high); }
+`}</style>
