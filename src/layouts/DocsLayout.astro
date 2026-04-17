@@ -1,0 +1,62 @@
+---
+import type { MarkdownHeading } from 'astro';
+import BaseLayout from './BaseLayout.astro';
+import AppHeader from '../components/AppHeader.astro';
+import LeftNav from '../components/LeftNav.astro';
+import PageSidebar from '../components/PageSidebar.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  headings: MarkdownHeading[];
+  hasToc: boolean;
+}
+
+const { title, description = '', headings, hasToc } = Astro.props;
+---
+
+<BaseLayout {title} {description}>
+  <!--
+    Stamp data-has-sidebar and data-has-toc synchronously before first paint.
+    PageSidebar's is:inline script also stamps data-has-sidebar on astro:before-swap
+    so the attribute survives <html> morph during View Transitions navigation.
+  -->
+  <script is:inline define:vars={{ hasToc }}>
+    document.documentElement.setAttribute('data-has-sidebar', '');
+    if (hasToc) {
+      document.documentElement.setAttribute('data-has-toc', '');
+    } else {
+      document.documentElement.removeAttribute('data-has-toc');
+    }
+  </script>
+
+  <div class="page">
+    <AppHeader />
+
+    <aside class="sidebar-pane" aria-label="Site navigation">
+      <LeftNav />
+    </aside>
+
+    <div class="main-frame">
+      <!-- In-flow spacer that holds the left sidebar's width in the flex row.
+           Mirrors .right-sidebar-container so --sl-sidebar-width JS updates
+           adapt the main content width instantly. -->
+      <div class="left-sidebar-spacer" aria-hidden="true"></div>
+
+      <div class="main-pane">
+        <article class="sl-container">
+          <div class="sl-markdown-content">
+            <h1 id="_top">{title}</h1>
+            <slot />
+          </div>
+        </article>
+      </div>
+
+      <aside class="right-sidebar-container" aria-label="Table of contents">
+        <div class="right-sidebar">
+          <PageSidebar {headings} {hasToc} />
+        </div>
+      </aside>
+    </div>
+  </div>
+</BaseLayout>

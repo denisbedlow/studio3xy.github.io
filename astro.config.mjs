@@ -1,31 +1,16 @@
 import { defineConfig } from 'astro/config';
-import starlight from '@astrojs/starlight';
+import mdx from '@astrojs/mdx';
 
 export default defineConfig({
   site: 'https://studio3xy.com',
-  integrations: [
-    starlight({
-      title: 'Studio3xy',
-      customCss: ['./src/styles/custom.css'],
-      pagination: false,
-      components: {
-        Header: './src/components/Header.astro',
-        PageSidebar: './src/components/PageSidebar.astro',
+  integrations: [mdx()],
+  vite: {
+    build: {
+      rollupOptions: {
+        // Pagefind JS is generated post-build into dist/pagefind/.
+        // Leave the dynamic import as-is rather than trying to bundle it.
+        external: [/\/pagefind\//],
       },
-      sidebar: [
-        { slug: 'index' },
-        { slug: 'eyetracking' },
-        { slug: 'video' },
-        {
-          label: 'Tools',
-          items: [
-{ label: 'CSV Loc Name Decomposer', link: '/tools/csv-decomposer/' },
-            { label: 'CSV Column Splitter', link: '/tools/csv-rule-splitter/' },
-            { label: 'EDL Tool & Converter', link: '/tools/edl-converter/' },
-            { label: 'CSV Add _MST to VFX ID', link: '/tools/csv-mst-appender/' },
-          ],
-        },
-      ],
-    }),
-  ],
+    },
+  },
 });
