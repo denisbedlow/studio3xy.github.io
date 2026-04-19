@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+/* ── Tailwind breakpoints — aligned with the CSS @media system ─
+   sm:  50rem  (800px)  — nav height + sidebar scroll behavior
+   lg:  64rem  (1024px) — left sidebar pins (Tailwind default, unchanged)
+   xl:  72rem  (1152px) — right TOC visible
+   ───────────────────────────────────────────────────────────── */
+@theme {
+  --breakpoint-sm: 50rem;
+  --breakpoint-lg: 64rem;
+  --breakpoint-xl: 72rem;
+}
+
 /* ─────────────────────────────────────────────────────────────
    Studio3xy — Global CSS
    Replaces Starlight as the source of all --sl-* design tokens.
