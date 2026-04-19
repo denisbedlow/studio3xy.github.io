@@ -10,9 +10,10 @@ interface Props {
   description?: string;
   headings: MarkdownHeading[];
   hasToc: boolean;
+  hideTitle?: boolean;
 }
 
-const { title, description = '', headings, hasToc } = Astro.props;
+const { title, description = '', headings, hasToc, hideTitle = false } = Astro.props;
 ---
 
 <BaseLayout {title} {description}>
@@ -46,7 +47,7 @@ const { title, description = '', headings, hasToc } = Astro.props;
       <div class="main-pane">
         <article class="sl-container">
           <div class="sl-markdown-content">
-            <h1 id="_top">{title}</h1>
+            {!hideTitle && <h1 id="_top">{title}</h1>}
             <slot />
           </div>
         </article>
