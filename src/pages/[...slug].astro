@@ -31,7 +31,7 @@ try {
   description={entry.data.description ?? ''}
   {headings}
   hasToc={headings.length > 0}
-  hideTitle={entry.data.hideTitle ?? false}
+  hideTitle={entry.data.hideTitle}
 >
   {renderError
     ? <p style="color:red">Failed to render content: {renderError}</p>
