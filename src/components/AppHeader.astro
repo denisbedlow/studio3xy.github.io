@@ -18,8 +18,56 @@ import Search from './Search.astro';
     </a>
   </div>
   <div class="flex-1"></div>
-  <div class="hidden md:flex gap-4 items-center">
+  <div class="hidden lg:flex gap-4 items-center">
     <Search />
     <ThemeToggle />
   </div>
+  <button
+    id="mobile-menu-toggle"
+    class="lg:hidden flex items-center justify-center w-8 h-8 text-[var(--sl-color-gray-2)] hover:text-[var(--sl-color-white)]"
+    aria-label="Toggle navigation menu"
+    aria-expanded="false"
+  >
+    <svg id="menu-icon-open" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+      aria-hidden="true">
+      <line x1="3" y1="6" x2="21" y2="6"/>
+      <line x1="3" y1="12" x2="21" y2="12"/>
+      <line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+    <svg id="menu-icon-close" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+      aria-hidden="true" class="hidden">
+      <line x1="18" y1="6" x2="6" y2="18"/>
+      <line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  </button>
 </header>
+
+<script>
+  function initMobileMenu() {
+    const toggle = document.getElementById('mobile-menu-toggle');
+    const sidebar = document.querySelector('.sidebar-pane');
+    const iconOpen = document.getElementById('menu-icon-open');
+    const iconClose = document.getElementById('menu-icon-close');
+    if (!toggle || !sidebar || !iconOpen || !iconClose) return;
+
+    function setOpen(open: boolean) {
+      document.documentElement.classList.toggle('sidebar-open', open);
+      toggle!.setAttribute('aria-expanded', String(open));
+      iconOpen!.classList.toggle('hidden', open);
+      iconClose!.classList.toggle('hidden', !open);
+    }
+
+    toggle.addEventListener('click', () => {
+      setOpen(!document.documentElement.classList.contains('sidebar-open'));
+    });
+
+    sidebar.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => setOpen(false));
+    });
+  }
+
+  initMobileMenu();
+  document.addEventListener('astro:after-swap', initMobileMenu);
+</script>

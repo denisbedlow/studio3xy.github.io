@@ -208,6 +208,10 @@ code { font-family: var(--__sl-font-mono); }
   overflow-y: auto;
 }
 
+html.sidebar-open .sidebar-pane {
+  visibility: visible;
+}
+
 .sidebar-content {
   height: 100%;
   min-height: max-content;
@@ -230,8 +234,8 @@ main { padding: var(--sl-main-pad); }
 /* Left sidebar spacer — hidden on mobile */
 .left-sidebar-spacer { display: none; }
 
-/* At ≥50rem: header switches to 3-column grid so sidebar/content/controls align */
-@media (min-width: 50rem) {
+/* At ≥64rem: header switches to 3-column grid so sidebar/content/controls align */
+@media (min-width: 64rem) {
   :root[data-has-sidebar] {
     --__sidebar-pad: calc(2 * var(--sl-nav-pad-x));
   }
@@ -243,8 +247,8 @@ main { padding: var(--sl-main-pad); }
   }
 }
 
-/* At ≥50rem: left sidebar pins, spacer holds its width in the flex row */
-@media (min-width: 50rem) {
+/* At ≥64rem: left sidebar pins, spacer holds its width in the flex row */
+@media (min-width: 64rem) {
   .sidebar-pane {
     visibility: visible;
     width: var(--sl-sidebar-width);
@@ -262,6 +266,8 @@ main { padding: var(--sl-main-pad); }
 /* Right sidebar — independent of --sl-sidebar-width so left sidebar resize doesn't affect it */
 :root { --toc-width: 18.75rem; }
 
+.right-sidebar-container { display: none; }
+
 .main-pane {
   isolation: isolate;
   flex: 1;
@@ -270,6 +276,7 @@ main { padding: var(--sl-main-pad); }
 
 @media (min-width: 72rem) {
   .right-sidebar-container {
+    display: block;
     order: 2;
     position: relative;
     flex-shrink: 0;
