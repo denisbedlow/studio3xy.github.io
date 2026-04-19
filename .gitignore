@@ -84,7 +84,7 @@ supabase-config.js
 
 # Orphaned legacy directories (not part of Astro site)
 admin/
-eyetracking/
+/eyetracking/
 resources/
 static/
 /video/
