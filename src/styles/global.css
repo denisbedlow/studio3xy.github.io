@@ -173,28 +173,7 @@ p, h1, h2, h3, h4, h5, h6, code { overflow-wrap: break-word; }
 code { font-family: var(--__sl-font-mono); }
 
 /* ── 3. Utility classes ──────────────────────────────────────── */
-.sr-only {
-  position: absolute; width: 1px; height: 1px; padding: 0;
-  margin: -1px; overflow: hidden; clip: rect(0,0,0,0);
-  white-space: nowrap; border-width: 0;
-}
-
-.sl-hidden  { display: none; }
-.sl-flex    { display: flex; }
-.sl-block   { display: block; }
-
-@media (min-width: 50rem) {
-  .md\:sl-hidden { display: none; }
-  .md\:sl-flex   { display: flex; }
-  .md\:sl-block  { display: block; }
-}
-@media (min-width: 72rem) {
-  .lg\:sl-hidden { display: none; }
-  .lg\:sl-flex   { display: flex; }
-  .lg\:sl-block  { display: block; }
-}
-[data-theme='light'] .light\:sl-hidden { display: none; }
-[data-theme='dark']  .dark\:sl-hidden  { display: none; }
+/* sr-only, hidden, flex, block → use Tailwind utility classes directly */
 
 /* ── 4. Page layout ──────────────────────────────────────────── */
 
@@ -250,6 +229,19 @@ main { padding: var(--sl-main-pad); }
 
 /* Left sidebar spacer — hidden on mobile */
 .left-sidebar-spacer { display: none; }
+
+/* At ≥50rem: header switches to 3-column grid so sidebar/content/controls align */
+@media (min-width: 50rem) {
+  :root[data-has-sidebar] {
+    --__sidebar-pad: calc(2 * var(--sl-nav-pad-x));
+  }
+  .header {
+    --__sidebar-width: max(0rem, var(--sl-sidebar-width) - var(--sl-nav-pad-x));
+    display: grid;
+    grid-template-columns: minmax(var(--__sidebar-width), auto) 1fr auto;
+    align-content: center;
+  }
+}
 
 /* At ≥50rem: left sidebar pins, spacer holds its width in the flex row */
 @media (min-width: 50rem) {

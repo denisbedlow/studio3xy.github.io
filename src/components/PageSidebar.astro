@@ -1,6 +1,7 @@
 ---
 import type { MarkdownHeading } from 'astro';
 import RightToc from './RightToc.astro';
+import TocControls from './TocControls.svelte';
 
 interface Props {
   headings: MarkdownHeading[];
@@ -12,7 +13,7 @@ const { headings, hasToc } = Astro.props;
 
 <!-- Mobile TOC — only when there are headings -->
 {hasToc && (
-  <div class="lg:sl-hidden">
+  <div class="block lg:hidden">
     <details class="mobile-toc">
       <summary>On this page</summary>
       <RightToc {headings} />
@@ -25,7 +26,7 @@ const { headings, hasToc } = Astro.props;
   so users can always reclaim right-column width. TOC list only shows when
   there are headings.
 -->
-<div class="toc-wrapper sl-hidden lg:sl-block">
+<div class="toc-wrapper hidden lg:block">
   <div id="toc-edge" class="toc-edge">
     <button
       id="toc-toggle"
@@ -54,6 +55,7 @@ const { headings, hasToc } = Astro.props;
   )}
 </div>
 
+<!-- Restores collapsed/width state before first paint — must stay inline to avoid flash -->
 <script is:inline>
   (function () {
     var root = document.documentElement;
@@ -83,82 +85,13 @@ const { headings, hasToc } = Astro.props;
         ev.newDocument.documentElement.classList.add('toc-collapsed');
       }
 
-      // Ensure data-has-sidebar survives the <html> morph between navigations
       ev.newDocument.documentElement.setAttribute('data-has-sidebar', '');
     });
   })();
 </script>
 
-<script>
-  const KEY_COLLAPSED = 'sl-toc-collapsed';
-  const KEY_WIDTH = 'sl-toc-width';
-  const MIN_WIDTH = 120;
-  const MAX_WIDTH = 540;
-
-  function setup() {
-    const toggle = document.getElementById('toc-toggle') as HTMLButtonElement | null;
-    const edge   = document.getElementById('toc-edge') as HTMLElement | null;
-    if (!toggle || !edge) return;
-
-    toggle.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const EASE = 'width 0.22s cubic-bezier(0.4, 0, 0.2, 1)';
-      const container = document.querySelector<HTMLElement>('.right-sidebar-container');
-      const sidebar   = document.querySelector<HTMLElement>('.right-sidebar');
-      if (container) container.style.transition = EASE;
-      if (sidebar)   sidebar.style.transition   = EASE;
-      setTimeout(() => {
-        if (container) container.style.transition = '';
-        if (sidebar)   sidebar.style.transition   = '';
-      }, 250);
-
-      const isNowCollapsed = document.documentElement.classList.toggle('toc-collapsed');
-      localStorage.setItem(KEY_COLLAPSED, isNowCollapsed ? '1' : '0');
-      if (!isNowCollapsed) {
-        const w = localStorage.getItem(KEY_WIDTH);
-        if (w) applyWidth(parseInt(w));
-      }
-    });
-
-    edge.addEventListener('mousedown', (e: MouseEvent) => {
-      if ((e.target as HTMLElement).closest('#toc-toggle')) return;
-      if (document.documentElement.classList.contains('toc-collapsed')) return;
-      e.preventDefault();
-
-      const container = document.querySelector<HTMLElement>('.right-sidebar-container');
-      if (!container) return;
-      const startX     = e.clientX;
-      const startWidth = container.getBoundingClientRect().width;
-      const sidebar = document.querySelector<HTMLElement>('.right-sidebar');
-      if (container) container.style.transition = 'none';
-      if (sidebar)   sidebar.style.transition   = 'none';
-      document.body.classList.add('toc-resizing');
-
-      function onMove(e: MouseEvent) {
-        applyWidth(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth + (startX - e.clientX))));
-      }
-      function onUp() {
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
-        if (container) container.style.transition = '';
-        if (sidebar)   sidebar.style.transition   = '';
-        document.body.classList.remove('toc-resizing');
-        const cur = getComputedStyle(document.documentElement).getPropertyValue('--toc-width').trim();
-        const px = parseInt(cur);
-        if (!isNaN(px)) localStorage.setItem(KEY_WIDTH, String(px));
-      }
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onUp);
-    });
-  }
-
-  function applyWidth(width: number) {
-    document.documentElement.style.setProperty('--toc-width', width + 'px');
-  }
-
-  setup();
-  document.addEventListener('astro:page-load', setup);
-</script>
+<!-- Interactive TOC collapse/resize — Svelte island -->
+<TocControls client:load />
 
 <style is:global>
   @media (min-width: 72rem) {

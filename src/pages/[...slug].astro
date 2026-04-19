@@ -13,7 +13,17 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
-const { Content, headings } = await render(entry);
+
+let Content: any;
+let headings: any[] = [];
+let renderError: string | null = null;
+
+try {
+  ({ Content, headings } = await render(entry));
+} catch (err) {
+  console.error('[...slug] render failed:', err);
+  renderError = err instanceof Error ? err.message : String(err);
+}
 ---
 
 <DocsLayout
@@ -22,5 +32,8 @@ const { Content, headings } = await render(entry);
   {headings}
   hasToc={headings.length > 0}
 >
-  <Content />
+  {renderError
+    ? <p style="color:red">Failed to render content: {renderError}</p>
+    : <Content />
+  }
 </DocsLayout>

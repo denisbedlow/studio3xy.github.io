@@ -60,3 +60,20 @@ site-search button > kbd {
   animation: none !important;
   mix-blend-mode: normal;
 }
+
+/* Search dialog — ::backdrop can't be targeted with Tailwind utility classes */
+.search-dialog::backdrop { background: var(--sl-color-backdrop-overlay); }
+.search-dialog { box-shadow: var(--sl-shadow-md); }
+
+/* Pagefind UI custom properties — set on the container Svelte renders */
+#pagefind-container {
+  --pagefind-ui-scale:         0.9;
+  --pagefind-ui-primary:       var(--sl-color-accent);
+  --pagefind-ui-text:          var(--sl-color-text);
+  --pagefind-ui-background:    var(--sl-color-bg);
+  --pagefind-ui-border:        var(--sl-color-hairline);
+  --pagefind-ui-tag:           var(--sl-color-bg-inline-code);
+  --pagefind-ui-border-width:  1px;
+  --pagefind-ui-border-radius: 0.25rem;
+  --pagefind-ui-font:          var(--__sl-font);
+}
