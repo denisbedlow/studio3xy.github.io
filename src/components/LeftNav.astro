@@ -11,14 +11,14 @@ type NavEntry = NavItem | NavGroup;
 const nav: NavEntry[] = [
   { label: 'Welcome',      href: '/' },
   { label: 'Eye Tracking', href: '/eyetracking/' },
-  { label: 'Video',        href: '/video/' },
+  { label: 'Videos',       href: '/video/' },
   {
     label: 'Tools',
     items: [
-      { label: 'CSV Loc Name Decomposer', href: '/tools/csv-decomposer/' },
-      { label: 'CSV Column Splitter',     href: '/tools/csv-rule-splitter/' },
-      { label: 'EDL Tool & Converter',    href: '/tools/edl-converter/' },
-      { label: 'CSV Add _MST to VFX ID',  href: '/tools/csv-mst-appender/' },
+      { label: 'CSV - Plate Name Decomposer', href: '/tools/csv-decomposer/' },
+      { label: 'CSV - Column Splitter',    href: '/tools/csv-rule-splitter/' },
+      { label: 'EDL - Converter',         href: '/tools/edl-converter/' },
+      { label: 'CSV - Add "_MST" to VFX ID', href: '/tools/csv-mst-appender/' },
     ],
   },
 ];
