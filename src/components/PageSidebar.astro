@@ -185,16 +185,8 @@ const { headings, hasToc } = Astro.props;
   .right-sidebar-panel { padding: 1rem var(--sl-sidebar-pad-x); }
 
   .sl-container {
-    width: calc(var(--sl-sidebar-width) - 2 * var(--sl-sidebar-pad-x));
+    width: calc(var(--toc-width) - 2 * var(--sl-sidebar-pad-x));
     transition: opacity 0.18s ease;
   }
   :global(html.toc-collapsed) .sl-container { opacity: 0; }
-
-  @media (min-width: 72rem) {
-    .sl-container {
-      max-width: calc(
-        (100vw - var(--sl-sidebar-width) - 2 * var(--sl-content-pad-x) - 2 * var(--sl-sidebar-pad-x)) * 0.25
-      );
-    }
-  }
 </style>

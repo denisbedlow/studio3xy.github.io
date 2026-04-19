@@ -259,8 +259,8 @@ main { padding: var(--sl-main-pad); }
   }
 }
 
-/* Right sidebar */
-:root { --toc-width: var(--sl-sidebar-width); }
+/* Right sidebar — independent of --sl-sidebar-width so left sidebar resize doesn't affect it */
+:root { --toc-width: 18.75rem; }
 
 .main-pane {
   isolation: isolate;
