@@ -1,6 +1,9 @@
 # Claude Code internal files
 .claude/
 
+# Session retros and internal docs
+/docs/
+
 # Operating System Files
 .DS_Store
 .DS_Store?
@@ -86,7 +89,3 @@ resources/
 static/
 /video/
 welcome-copy/
-
-# Standalone legacy files
-watch.html
-404.html
