@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 /* ─────────────────────────────────────────────────────────────
    Studio3xy — Global CSS
    Replaces Starlight as the source of all --sl-* design tokens.

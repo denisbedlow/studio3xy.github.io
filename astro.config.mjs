@@ -1,9 +1,13 @@
 import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
 
+import svelte from '@astrojs/svelte';
+
+import tailwindcss from '@tailwindcss/vite';
+
 export default defineConfig({
   site: 'https://studio3xy.com',
-  integrations: [mdx()],
+  integrations: [mdx(), svelte()],
   vite: {
     build: {
       rollupOptions: {
@@ -12,5 +16,7 @@ export default defineConfig({
         external: [/\/pagefind\//],
       },
     },
+
+    plugins: [tailwindcss()],
   },
 });
