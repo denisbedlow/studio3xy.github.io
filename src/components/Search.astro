@@ -29,8 +29,11 @@
       const container = dialog.querySelector('#pagefind-container');
       if (container && !container.hasChildNodes()) {
         try {
-          const { PagefindUI } = await import('/pagefind/pagefind-ui.js');
-          new PagefindUI({ element: container, showSubResults: true, resetStyles: false });
+          // pagefind-ui.js is an IIFE that sets window.PagefindUI — it has no
+          // ES module exports, so destructuring import() always yields undefined.
+          // Import it for its side effect, then read from window.
+          await import('/pagefind/pagefind-ui.js');
+          new window.PagefindUI({ element: container, showSubResults: true, resetStyles: false });
         } catch (err) {
           console.error('Pagefind failed to load:', err);
           container.textContent = 'Search not available in dev mode — run npm run build first.';
@@ -51,6 +54,9 @@
     });
   }
 
-  setup();
+  // astro:page-load fires on initial page load AND every client-side navigation.
+  // Do NOT call setup() directly here — <ClientRouter /> dispatches astro:page-load
+  // on the very first load too, so a direct call would register duplicate listeners
+  // on the button and cause an InvalidStateError on the first click.
   document.addEventListener('astro:page-load', setup);
 </script>
