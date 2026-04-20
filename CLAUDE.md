@@ -35,6 +35,10 @@ Built with Astro, deployed to GitHub Pages via studio3xy.com.
   (Sentry is a future option if silent failures become a problem).
 - **Component naming**: PascalCase for components, kebab-case for pages
 - **No abstraction until a pattern repeats 3+ times** — keep it simple first
+- **Svelte islands inside docs pages**: add `class="not-content"` on the
+  component's root element. Otherwise `.sl-markdown-content`'s descendant
+  margin rules push child elements apart and break grid/flex layouts. The
+  site's global CSS respects `:where(.not-content *)` as an opt-out.
 
 ## Hard rules
 - Run `npx astro check` after every edit — type-checks .astro and .ts files
