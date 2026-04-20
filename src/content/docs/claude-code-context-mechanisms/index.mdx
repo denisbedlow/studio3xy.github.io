@@ -1,0 +1,35 @@
+---
+title: Claude Code context mechanisms
+description: The mechanisms that inject text into Claude Code's context — what they are, when they load, and how they relate.
+---
+
+import ContextMechanisms from '../../../components/ContextMechanisms.svelte';
+import { preSession, midSession } from './mechanisms';
+
+<div class="ctx-legend"><strong>Source</strong> = where the text originates (who wrote it). <strong>Invoker</strong> = what causes it to enter this session's context.</div>
+
+## Pre-session — automatic startup loads
+
+Injected before the first turn, based on filesystem and config.
+
+<ContextMechanisms rows={preSession} client:load />
+
+## Mid-session — triggered injections
+
+Enter context during the conversation, triggered by Claude, you, or a lifecycle event.
+
+<ContextMechanisms rows={midSession} client:load />
+
+> **The underlying truth:** all of the above, without exception, are text injected into the context window. The context window is the one real primitive. Every mechanism above is a convention for _how_, _when_, and — in Claude Code — _where on the filesystem_ to put text into it.
+
+<style>{`
+  .ctx-legend {
+    font-size: var(--sl-text-sm);
+    padding: 0.75rem 1rem;
+    background: var(--sl-color-bg-sidebar);
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 0.5rem;
+    line-height: 1.55;
+  }
+  .ctx-legend strong { color: var(--sl-color-white); font-weight: 500; }
+`}</style>
