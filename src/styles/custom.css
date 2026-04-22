@@ -63,7 +63,14 @@ site-search button > kbd {
 
 /* Search dialog — ::backdrop can't be targeted with Tailwind utility classes */
 .search-dialog::backdrop { background: var(--sl-color-backdrop-overlay); }
-.search-dialog { box-shadow: var(--sl-shadow-md); }
+.search-dialog {
+  box-shadow: var(--sl-shadow-md);
+  position: fixed;
+  top: calc(var(--sl-nav-height) / 2);
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+}
 
 /* Pagefind UI custom properties — set on the container Svelte renders */
 #pagefind-container {
